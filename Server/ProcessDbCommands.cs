@@ -1,11 +1,11 @@
 using System;
 using System.Linq;
-using AspNetCoreSpa.Server.Extensions;
+using EchoIsles.Server.Extensions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace AspNetCoreSpa.Server
+namespace EchoIsles.Server
 {
     public class ProcessDbCommands
     {
@@ -19,20 +19,20 @@ namespace AspNetCoreSpa.Server
                 if (args.Contains("dropdb"))
                 {
                     Console.WriteLine("Dropping database");
-                    var db = GetApplicationDbContext(scope);
+                    var db = ProcessDbCommands.GetApplicationDbContext(scope);
                     db.Database.EnsureDeleted();
                     db.Database.EnsureCreated();
                 }
                 if (args.Contains("migratedb"))
                 {
                     Console.WriteLine("Migrating database");
-                    var db = GetApplicationDbContext(scope);
+                    var db = ProcessDbCommands.GetApplicationDbContext(scope);
                     db.Database.Migrate();
                 }
                 if (args.Contains("seeddb"))
                 {
                     Console.WriteLine("Seeding database");
-                    var db = GetApplicationDbContext(scope);
+                    var db = ProcessDbCommands.GetApplicationDbContext(scope);
                     db.Seed(host);
                 }
             }

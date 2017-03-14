@@ -1,14 +1,12 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using AspNetCoreSpa.Server.Entities;
-using AspNetCoreSpa.Server.Extensions;
+using EchoIsles.Server.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
-namespace AspNetCoreSpa.Server.Controllers.api
+namespace EchoIsles.Server.Controllers.api
 {
     public static class AllProducts
     {
@@ -110,7 +108,7 @@ namespace AspNetCoreSpa.Server.Controllers.api
                 _products[index] = product;
             }
 
-            return Ok(product);
+            return this.Ok(product);
         }
 
         [HttpPost]
@@ -120,7 +118,7 @@ namespace AspNetCoreSpa.Server.Controllers.api
 
             _products.Add(product);
 
-            return Ok(product);
+            return this.Ok(product);
         }
 
         [HttpDelete("{id}")]
@@ -128,7 +126,7 @@ namespace AspNetCoreSpa.Server.Controllers.api
         {
             _products.Remove(_products.FirstOrDefault(p => p.Id == id));
 
-            return Ok();
+            return this.Ok();
         }
 
     }

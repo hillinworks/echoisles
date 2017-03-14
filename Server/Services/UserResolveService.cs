@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http;
 
-namespace AspNetCoreSpa.Server.Services
+namespace EchoIsles.Server.Services
 {
     public class UserResolverService
     {

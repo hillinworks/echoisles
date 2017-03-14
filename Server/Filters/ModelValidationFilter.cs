@@ -1,9 +1,9 @@
-using AspNetCoreSpa.Server.Extensions;
+using EchoIsles.Server.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Newtonsoft.Json;
 
-namespace AspNetCoreSpa.Server.Filters
+namespace EchoIsles.Server.Filters
 {
     public class ModelValidationFilter : IActionFilter
     {

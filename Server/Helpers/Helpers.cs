@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.AspNetCore.ResponseCompression;
 using Serilog;
 using Serilog.Events;
-using static Microsoft.AspNetCore.ResponseCompression.ResponseCompressionDefaults;
 
-namespace AspNetCoreSpa.Server
+namespace EchoIsles.Server.Helpers
 {
     public static class Helpers
     {
@@ -19,7 +19,7 @@ namespace AspNetCoreSpa.Server
             .CreateLogger();
         }
 
-        public static IEnumerable<string> DefaultMimeTypes => MimeTypes.Concat(new[]
+        public static IEnumerable<string> DefaultMimeTypes => ResponseCompressionDefaults.MimeTypes.Concat(new[]
                                 {
                                     "image/svg+xml",
                                     "application/font-woff2"

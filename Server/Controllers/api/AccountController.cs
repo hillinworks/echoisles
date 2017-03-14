@@ -1,16 +1,16 @@
 using System.Linq;
 using System.Threading.Tasks;
-using AspNetCoreSpa.Server.Entities;
-using AspNetCoreSpa.Server.Extensions;
-using AspNetCoreSpa.Server.Services.Abstract;
-using AspNetCoreSpa.Server.ViewModels.AccountViewModels;
+using EchoIsles.Server.Entities;
+using EchoIsles.Server.Extensions;
+using EchoIsles.Server.Services.Abstract;
+using EchoIsles.Server.ViewModels.AccountViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Logging;
 
-namespace AspNetCoreSpa.Server.Controllers.api
+namespace EchoIsles.Server.Controllers.api
 {
     [Authorize]
     [Route("api/[controller]")]
@@ -53,17 +53,17 @@ namespace AspNetCoreSpa.Server.Controllers.api
             }
             if (result.RequiresTwoFactor)
             {
-                return RedirectToAction(nameof(SendCode), new { RememberMe = model.RememberMe });
+                return this.RedirectToAction(nameof(SendCode), new { RememberMe = model.RememberMe });
             }
             if (result.IsLockedOut)
             {
                 _logger.LogWarning(2, "User account locked out.");
-                return BadRequest("Lockout");
+                return this.BadRequest("Lockout");
             }
             else
             {
-                ModelState.AddModelError(string.Empty, "Invalid login attempt.");
-                return BadRequest(ModelState.GetModelErrors());
+                this.ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                return this.BadRequest(this.ModelState.GetModelErrors());
             }
 
         }
@@ -89,17 +89,17 @@ namespace AspNetCoreSpa.Server.Controllers.api
                 {
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(currentUser);
 
-                    var host = Request.Scheme + "://" + Request.Host;
+                    var host = this.Request.Scheme + "://" + this.Request.Host;
                     var callbackUrl = host + "?userId=" + currentUser.Id + "&emailConfirmCode=" + code;
                     var confirmationLink = "<a class='btn-primary' href=\"" + callbackUrl + "\">Confirm email address</a>";
                     _logger.LogInformation(3, "User created a new account with password.");
                     //await _emailSender.SendEmailAsync(MailType.Register, new EmailModel { To = model.Email }, confirmationLink);
-                    return Json(new { });
+                    return this.Json(new { });
                 }
             }
-            AddErrors(result);
+            this.AddErrors(result);
             // If we got this far, something failed, redisplay form
-            return BadRequest(ModelState.GetModelErrors());
+            return this.BadRequest(this.ModelState.GetModelErrors());
         }
 
         [HttpPost("logout")]
@@ -107,7 +107,7 @@ namespace AspNetCoreSpa.Server.Controllers.api
         {
             await _signInManager.SignOutAsync();
             _logger.LogInformation(4, "User logged out.");
-            return Ok();
+            return this.Ok();
         }
 
         [HttpGet("ExternalLogin")]
@@ -115,9 +115,9 @@ namespace AspNetCoreSpa.Server.Controllers.api
         public IActionResult ExternalLogin(string provider, string returnUrl = null)
         {
             // Request a redirect to the external login provider.
-            var redirectUrl = Url.Action("ExternalLoginCallback", "Account", new { ReturnUrl = returnUrl });
+            var redirectUrl = this.Url.Action("ExternalLoginCallback", "Account", new { ReturnUrl = returnUrl });
             var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
-            return Challenge(properties, provider);
+            return this.Challenge(properties, provider);
         }
 
         [HttpGet("ExternalLoginCallback")]
@@ -126,12 +126,12 @@ namespace AspNetCoreSpa.Server.Controllers.api
         {
             if (remoteError != null)
             {
-                return Render(ExternalLoginStatus.Error);
+                return this.Render(ExternalLoginStatus.Error);
             }
             var info = await _signInManager.GetExternalLoginInfoAsync();
             if (info == null)
             {
-                return Render(ExternalLoginStatus.Invalid);
+                return this.Render(ExternalLoginStatus.Invalid);
             }
 
             // Sign in the user with this external login provider if the user already has a login.
@@ -139,15 +139,15 @@ namespace AspNetCoreSpa.Server.Controllers.api
             if (result.Succeeded)
             {
                 _logger.LogInformation(5, "User logged in with {Name} provider.", info.LoginProvider);
-                return Render(ExternalLoginStatus.Ok); // Everything Ok, login user
+                return this.Render(ExternalLoginStatus.Ok); // Everything Ok, login user
             }
             if (result.RequiresTwoFactor)
             {
-                return Render(ExternalLoginStatus.TwoFactor);
+                return this.Render(ExternalLoginStatus.TwoFactor);
             }
             if (result.IsLockedOut)
             {
-                return Render(ExternalLoginStatus.Lockout);
+                return this.Render(ExternalLoginStatus.Lockout);
             }
             else
             {
@@ -156,7 +156,7 @@ namespace AspNetCoreSpa.Server.Controllers.api
                 // ViewData["LoginProvider"] = info.LoginProvider;
                 // var email = info.Principal.FindFirstValue(ClaimTypes.Email);
                 // return RedirectToAction("Index", "Home", new ExternalLoginCreateAccountViewModel { Email = email });
-                return Render(ExternalLoginStatus.CreateAccount);
+                return this.Render(ExternalLoginStatus.CreateAccount);
             }
         }
 
@@ -169,7 +169,7 @@ namespace AspNetCoreSpa.Server.Controllers.api
             var info = await _signInManager.GetExternalLoginInfoAsync();
             if (info == null)
             {
-                return BadRequest("External login information cannot be accessed, try again.");
+                return this.BadRequest("External login information cannot be accessed, try again.");
             }
             var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
             var result = await _userManager.CreateAsync(user);
@@ -180,10 +180,10 @@ namespace AspNetCoreSpa.Server.Controllers.api
                 {
                     await _signInManager.SignInAsync(user, isPersistent: false);
                     _logger.LogInformation(6, "User created an account using {Name} provider.", info.LoginProvider);
-                    return Ok(); // Everything ok
+                    return this.Ok(); // Everything ok
                 }
             }
-            return BadRequest(new[] { "Email already exists" });
+            return this.BadRequest(new[] { "Email already exists" });
         }
         [HttpGet("ConfirmEmail")]
         [AllowAnonymous]
@@ -191,22 +191,22 @@ namespace AspNetCoreSpa.Server.Controllers.api
         {
             if (userId == null || code == null)
             {
-                return View("Error");
+                return this.View("Error");
             }
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null)
             {
-                return View("Error");
+                return this.View("Error");
             }
             var result = await _userManager.ConfirmEmailAsync(user, code);
-            return View(result.Succeeded ? "ConfirmEmail" : "Error");
+            return this.View(result.Succeeded ? "ConfirmEmail" : "Error");
         }
 
         [HttpGet("ForgotPassword")]
         [AllowAnonymous]
         public IActionResult ForgotPassword()
         {
-            return View();
+            return this.View();
         }
 
         [HttpPost("ForgotPassword")]
@@ -217,17 +217,17 @@ namespace AspNetCoreSpa.Server.Controllers.api
             if (currentUser == null || !(await _userManager.IsEmailConfirmedAsync(currentUser)))
             {
                 // Don't reveal that the user does not exist or is not confirmed
-                return View("ForgotPasswordConfirmation");
+                return this.View("ForgotPasswordConfirmation");
             }
             // For more information on how to enable account confirmation and password reset please visit https://go.microsoft.com/fwlink/?LinkID=532713
             // Send an email with this link
             var code = await _userManager.GeneratePasswordResetTokenAsync(currentUser);
 
-            var host = Request.Scheme + "://" + Request.Host;
+            var host = this.Request.Scheme + "://" + this.Request.Host;
             var callbackUrl = host + "?userId=" + currentUser.Id + "&passwordResetCode=" + code;
             var confirmationLink = "<a class='btn-primary' href=\"" + callbackUrl + "\">Reset your password</a>";
             await _emailSender.SendEmailAsync(MailType.ForgetPassword, new EmailModel { To = model.Email }, confirmationLink);
-            return Json(new { });
+            return this.Json(new { });
         }
 
         [HttpPost("resetpassword")]
@@ -239,15 +239,15 @@ namespace AspNetCoreSpa.Server.Controllers.api
             if (user == null)
             {
                 // Don't reveal that the user does not exist
-                return Ok("Reset confirmed");
+                return this.Ok("Reset confirmed");
             }
             var result = await _userManager.ResetPasswordAsync(user, model.Code, model.Password);
             if (result.Succeeded)
             {
-                return Ok("Reset confirmed"); ;
+                return this.Ok("Reset confirmed"); ;
             }
-            AddErrors(result);
-            return BadRequest(ModelState.GetModelErrors());
+            this.AddErrors(result);
+            return this.BadRequest(this.ModelState.GetModelErrors());
         }
 
         [HttpGet("SendCode")]
@@ -257,11 +257,11 @@ namespace AspNetCoreSpa.Server.Controllers.api
             var user = await _signInManager.GetTwoFactorAuthenticationUserAsync();
             if (user == null)
             {
-                return BadRequest("Error");
+                return this.BadRequest("Error");
             }
             var userFactors = await _userManager.GetValidTwoFactorProvidersAsync(user);
             var factorOptions = userFactors.Select(purpose => new SelectListItem { Text = purpose, Value = purpose }).ToList();
-            return View(new SendCodeViewModel { Providers = factorOptions, ReturnUrl = returnUrl, RememberMe = rememberMe });
+            return this.View(new SendCodeViewModel { Providers = factorOptions, ReturnUrl = returnUrl, RememberMe = rememberMe });
         }
 
         [HttpPost("SendCode")]
@@ -271,14 +271,14 @@ namespace AspNetCoreSpa.Server.Controllers.api
             var user = await _signInManager.GetTwoFactorAuthenticationUserAsync();
             if (user == null)
             {
-                return BadRequest("Error");
+                return this.BadRequest("Error");
             }
 
             // Generate the token and send it
             var code = await _userManager.GenerateTwoFactorTokenAsync(user, model.SelectedProvider);
             if (string.IsNullOrWhiteSpace(code))
             {
-                return BadRequest("Error");
+                return this.BadRequest("Error");
             }
 
             var message = "Your security code is: " + code;
@@ -292,7 +292,7 @@ namespace AspNetCoreSpa.Server.Controllers.api
                 await _smsSender.SendSmsTwillioAsync(await _userManager.GetPhoneNumberAsync(user), message);
             }
 
-            return RedirectToAction(nameof(VerifyCode), new { Provider = model.SelectedProvider, ReturnUrl = model.ReturnUrl, RememberMe = model.RememberMe });
+            return this.RedirectToAction(nameof(VerifyCode), new { Provider = model.SelectedProvider, ReturnUrl = model.ReturnUrl, RememberMe = model.RememberMe });
         }
 
         [HttpGet("VerifyCode")]
@@ -303,9 +303,9 @@ namespace AspNetCoreSpa.Server.Controllers.api
             var user = await _signInManager.GetTwoFactorAuthenticationUserAsync();
             if (user == null)
             {
-                return BadRequest("Error");
+                return this.BadRequest("Error");
             }
-            return View(new VerifyCodeViewModel { Provider = provider, ReturnUrl = returnUrl, RememberMe = rememberMe });
+            return this.View(new VerifyCodeViewModel { Provider = provider, ReturnUrl = returnUrl, RememberMe = rememberMe });
         }
 
         [HttpPost("VerifyCode")]
@@ -319,17 +319,17 @@ namespace AspNetCoreSpa.Server.Controllers.api
             var result = await _signInManager.TwoFactorSignInAsync(model.Provider, model.Code, model.RememberMe, model.RememberBrowser);
             if (result.Succeeded)
             {
-                return RedirectToLocal(model.ReturnUrl);
+                return this.RedirectToLocal(model.ReturnUrl);
             }
             if (result.IsLockedOut)
             {
                 _logger.LogWarning(7, "User account locked out.");
-                return View("Lockout");
+                return this.View("Lockout");
             }
             else
             {
-                ModelState.AddModelError(string.Empty, "Invalid code.");
-                return View(model);
+                this.ModelState.AddModelError(string.Empty, "Invalid code.");
+                return this.View(model);
             }
         }
 
@@ -339,30 +339,30 @@ namespace AspNetCoreSpa.Server.Controllers.api
         {
             foreach (var error in result.Errors)
             {
-                ModelState.AddModelError(string.Empty, error.Description);
+                this.ModelState.AddModelError(string.Empty, error.Description);
             }
         }
 
         private Task<ApplicationUser> GetCurrentUserAsync()
         {
-            return _userManager.GetUserAsync(HttpContext.User);
+            return _userManager.GetUserAsync(this.HttpContext.User);
         }
 
         private IActionResult RedirectToLocal(string returnUrl)
         {
-            if (Url.IsLocalUrl(returnUrl))
+            if (this.Url.IsLocalUrl(returnUrl))
             {
-                return Redirect(returnUrl);
+                return this.Redirect(returnUrl);
             }
             else
             {
-                return RedirectToAction(nameof(HomeController.Index), "Home");
+                return this.RedirectToAction(nameof(HomeController.Index), "Home");
             }
         }
 
         private IActionResult Render(ExternalLoginStatus status)
         {
-            return RedirectToAction("Index", "Home", new { externalLoginStatus = (int)status });
+            return this.RedirectToAction("Index", "Home", new { externalLoginStatus = (int)status });
         }
 
 

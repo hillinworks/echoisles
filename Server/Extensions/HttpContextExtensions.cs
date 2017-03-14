@@ -4,7 +4,7 @@ using System.Linq;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Authentication;
 
-namespace AspNetCoreSpa.Server.Extensions
+namespace EchoIsles.Server.Extensions
 {
         public static class HttpContextExtensions
     {

@@ -1,5 +1,5 @@
 
-namespace AspNetCoreSpa.Server
+namespace EchoIsles.Server.Helpers
 {
     public static class GlobalText
     {

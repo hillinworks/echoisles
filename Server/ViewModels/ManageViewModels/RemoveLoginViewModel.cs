@@ -1,4 +1,4 @@
-namespace AspNetCoreSpa.Server.ViewModels.ManageViewModels
+namespace EchoIsles.Server.ViewModels.ManageViewModels
 {
     public class RemoveLoginViewModel
     {

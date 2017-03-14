@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "es2015",
     "module": "commonjs",
     "moduleResolution": "node",
     "emitDecoratorMetadata": true,
@@ -10,7 +10,13 @@
     "noEmit": true,
     "importHelpers": true,
     "noEmitHelpers": true,
-    "strictNullChecks": false,
+    //"noImplicitAny": true,
+    "noImplicitReturns": true,
+    "alwaysStrict": true,
+    //"noUnusedLocals": true,
+    "noFallthroughCasesInSwitch": true,
+    //"strictNullChecks": true,
+    "suppressImplicitAnyIndexErrors": true,
     "lib": [
       "dom",
       "es6"

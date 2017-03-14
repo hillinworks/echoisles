@@ -2,9 +2,8 @@ using System.Linq;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
-using Microsoft.Extensions.DependencyInjection;
 
-namespace AspNetCoreSpa.Server.Extensions
+namespace EchoIsles.Server.Extensions
 {
     public static class DbContextExtensions
     {

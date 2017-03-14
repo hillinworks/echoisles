@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 
-namespace AspNetCoreSpa.Server.Services.Abstract
+namespace EchoIsles.Server.Services.Abstract
 {
     public interface ISmsSender
     {

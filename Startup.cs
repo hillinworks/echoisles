@@ -1,11 +1,11 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using EchoIsles.Server.Extensions;
+using EchoIsles.Server.Helpers;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using AspNetCoreSpa.Server;
-using AspNetCoreSpa.Server.Extensions;
 
-namespace AspNetCoreSpa
+namespace EchoIsles
 {
     public class Startup
     {
@@ -14,7 +14,7 @@ namespace AspNetCoreSpa
         //2) Configure services
         //3) Configure
 
-        private IHostingEnvironment _hostingEnv;
+        private readonly IHostingEnvironment _hostingEnv;
         public Startup(IHostingEnvironment env)
         {
             _hostingEnv = env;
@@ -32,7 +32,7 @@ namespace AspNetCoreSpa
                 builder.AddUserSecrets();
             }
 
-            Configuration = builder.Build();
+            Startup.Configuration = builder.Build();
         }
 
         public static IConfigurationRoot Configuration { get; set; }

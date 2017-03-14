@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
-namespace AspNetCoreSpa.Server.Controllers.api
+namespace EchoIsles.Server.Controllers.api
 {
     [Authorize(Roles = "Admin")]
     [Route("api/[controller]")]
@@ -12,7 +12,7 @@ namespace AspNetCoreSpa.Server.Controllers.api
         [HttpGet("doadminoperation")]
         public IActionResult DoAdminOperation()
         {
-            return Ok(new { message = "Some secure data only accessible by admin" });
+            return this.Ok(new { message = "Some secure data only accessible by admin" });
         }
 
     }

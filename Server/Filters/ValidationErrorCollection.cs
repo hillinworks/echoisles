@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace AspNetCoreSpa.Server.Filters
+namespace EchoIsles.Server.Filters
 {
     /// <summary>
     /// A collection of ValidationError objects that is used to collect
@@ -32,7 +32,7 @@ namespace AspNetCoreSpa.Server.Filters
                 ControlID = FieldName,
                 ID = ID
             };
-            Add(error);
+            this.Add(error);
         }
 
         /// <summary>
@@ -44,7 +44,7 @@ namespace AspNetCoreSpa.Server.Filters
         /// <param name="arguments"></param>
         public void AddFormat(string Message, string FieldName, string ID, params object[] arguments)
         {
-            Add(string.Format(Message, arguments), FieldName, ID);
+            this.Add(string.Format(Message, arguments), FieldName, ID);
         }
 
         /// <summary>
@@ -53,8 +53,8 @@ namespace AspNetCoreSpa.Server.Filters
         /// <param name="Index"></param>
         public void Remove(int Index)
         {
-            if (Index > Count - 1 || Index < 0)
-                RemoveAt(Index);
+            if (Index > this.Count - 1 || Index < 0)
+                this.RemoveAt(Index);
         }
 
         /// <summary>
@@ -79,7 +79,7 @@ namespace AspNetCoreSpa.Server.Filters
         public bool Assert(bool Condition, string Message, string FieldName = null, string ID = null)
         {
             if (Condition)
-                Add(Message, FieldName, ID);
+                this.Add(Message, FieldName, ID);
 
             return Condition;
         }
@@ -98,7 +98,7 @@ namespace AspNetCoreSpa.Server.Filters
         public bool Assert(bool Condition, ValidationError Error)
         {
             if (Condition)
-                Add(Error);
+                this.Add(Error);
 
             return Condition;
         }
@@ -111,7 +111,7 @@ namespace AspNetCoreSpa.Server.Filters
         /// <returns></returns>
         public override string ToString()
         {
-            if (Count < 1)
+            if (this.Count < 1)
                 return "";
 
             StringBuilder sb = new StringBuilder(128);
@@ -131,7 +131,7 @@ namespace AspNetCoreSpa.Server.Filters
         /// <returns></returns>
         public string ToHtml()
         {
-            if (Count < 1)
+            if (this.Count < 1)
                 return "";
 
             StringBuilder sb = new StringBuilder(256);

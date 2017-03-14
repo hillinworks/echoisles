@@ -1,4 +1,4 @@
-namespace AspNetCoreSpa.Server.ViewModels
+namespace EchoIsles.Server.ViewModels
 {
     public class ContentVm
     {

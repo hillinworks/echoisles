@@ -1,14 +1,14 @@
 using System;
 using System.Net;
 using System.Threading.Tasks;
-using AspNetCoreSpa.Server.Entities;
-using AspNetCoreSpa.Server.Extensions;
-using AspNetCoreSpa.Server.ViewModels;
+using EchoIsles.Server.Entities;
+using EchoIsles.Server.Extensions;
+using EchoIsles.Server.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
-namespace AspNetCoreSpa.Server.Controllers.api
+namespace EchoIsles.Server.Controllers.api
 {
     [Route("api/[controller]")]
     public class ProfileController : BaseController
@@ -28,18 +28,18 @@ namespace AspNetCoreSpa.Server.Controllers.api
             try
             {
 
-                var user = await _userManager.FindByEmailAsync(HttpContext.User.Identity.Name);
+                var user = await _userManager.FindByEmailAsync(this.HttpContext.User.Identity.Name);
                 if (user != null)
                 {
-                    return Ok(new { FirstName = user.FirstName, LastName = user.LastName });
+                    return this.Ok(new { FirstName = user.FirstName, LastName = user.LastName });
                 }
-                Response.StatusCode = (int)HttpStatusCode.BadRequest;
-                return Json(ModelState.GetModelErrors());
+                this.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                return this.Json(this.ModelState.GetModelErrors());
             }
             catch (Exception ex)
             {
                 _logger.LogError(1, ex, "Unable to get profile of user");
-                return BadRequest();
+                return this.BadRequest();
             }
 
         }
@@ -49,7 +49,7 @@ namespace AspNetCoreSpa.Server.Controllers.api
         {
             try
             {
-                var user = await _userManager.FindByEmailAsync(HttpContext.User.Identity.Name);
+                var user = await _userManager.FindByEmailAsync(this.HttpContext.User.Identity.Name);
                 if (user != null)
                 {
                     user.FirstName = model.FirstName;
@@ -57,19 +57,19 @@ namespace AspNetCoreSpa.Server.Controllers.api
                     var result = await _userManager.UpdateAsync(user);
                     if (result == IdentityResult.Success)
                     {
-                        return Ok(new { FirstName = model.FirstName, LastName = model.LastName });
+                        return this.Ok(new { FirstName = model.FirstName, LastName = model.LastName });
                     }
-                    Response.StatusCode = (int)HttpStatusCode.BadRequest;
-                    return Json("Unable to update user");
+                    this.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                    return this.Json("Unable to update user");
                 }
-                Response.StatusCode = (int)HttpStatusCode.BadRequest;
-                return Json(ModelState.GetModelErrors());
+                this.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                return this.Json(this.ModelState.GetModelErrors());
             }
             catch (Exception ex)
             {
                 _logger.LogError(1, ex, "Unable to save user name");
 
-                return BadRequest();
+                return this.BadRequest();
             }
 
         }
@@ -78,22 +78,22 @@ namespace AspNetCoreSpa.Server.Controllers.api
         {
             try
             {
-                var user = await _userManager.FindByEmailAsync(HttpContext.User.Identity.Name);
+                var user = await _userManager.FindByEmailAsync(this.HttpContext.User.Identity.Name);
                 if (user != null)
                 {
                     var result = await _userManager.ChangePasswordAsync(user, model.OldPassword, model.NewPassword);
                     if (result == IdentityResult.Success)
                     {
-                        return Ok(new { });
+                        return this.Ok(new { });
                     }
                 }
-                Response.StatusCode = (int)HttpStatusCode.BadRequest;
-                return Json(new[] { "Unable to change password" });
+                this.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                return this.Json(new[] { "Unable to change password" });
             }
             catch (Exception ex)
             {
                 _logger.LogError(1, ex, "Unable to change password");
-                return BadRequest();
+                return this.BadRequest();
             }
 
         }

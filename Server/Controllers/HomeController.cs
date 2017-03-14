@@ -1,13 +1,14 @@
 ﻿// For more information on enabling MVC for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
+
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using AspNetCoreSpa.Server.Entities;
+using EchoIsles.Server.Entities;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
-namespace AspNetCoreSpa.Server.Controllers
+namespace EchoIsles.Server.Controllers
 {
     public class HomeController : Controller
     {
@@ -22,13 +23,13 @@ namespace AspNetCoreSpa.Server.Controllers
 
         public async Task<IActionResult> Index()
         {
-            ViewBag.MainDotJs = await GetMainDotJs();
+            this.ViewBag.MainDotJs = await this.GetMainDotJs();
 
-            if (Request.Query.ContainsKey("emailConfirmCode") &&
-                Request.Query.ContainsKey("userId"))
+            if (this.Request.Query.ContainsKey("emailConfirmCode") &&
+                this.Request.Query.ContainsKey("userId"))
             {
-                var userId = Request.Query["userId"].ToString();
-                var code = Request.Query["emailConfirmCode"].ToString();
+                var userId = this.Request.Query["userId"].ToString();
+                var code = this.Request.Query["emailConfirmCode"].ToString();
                 code = code.Replace(" ", "+");
 
                 var applicationUser = await _userManager.FindByIdAsync(userId);
@@ -37,19 +38,19 @@ namespace AspNetCoreSpa.Server.Controllers
                     var valid = await _userManager.ConfirmEmailAsync(applicationUser, code);
                     if (valid.Succeeded)
                     {
-                        ViewBag.emailConfirmed = true;
+                        this.ViewBag.emailConfirmed = true;
                     }
                 }
             }
-            else if (User.Identity != null && !string.IsNullOrEmpty(User.Identity.Name))
+            else if (this.User.Identity != null && !string.IsNullOrEmpty(this.User.Identity.Name))
             {
-                var user = await _userManager.FindByNameAsync(User.Identity.Name);
+                var user = await _userManager.FindByNameAsync(this.User.Identity.Name);
                 var roles = await _userManager.GetRolesAsync(user);
                 var userResult = new { User = new { DisplayName = user.UserName, Roles = roles.ToList() } };
-                ViewBag.user = userResult;
+                this.ViewBag.user = userResult;
             }
 
-            return View();
+            return this.View();
         }
 
         // Becasue for production this is hashed chunk so has changes on each production build
@@ -63,7 +64,7 @@ namespace AspNetCoreSpa.Server.Controllers
                 // More info here: https://github.com/aspnet/JavaScriptServices/issues/578#issuecomment-272039541
                 using (var client = new HttpClient())
                 {
-                    var requestUri = Request.Scheme + "://" + Request.Host + "/dist/main.js";
+                    var requestUri = this.Request.Scheme + "://" + this.Request.Host + "/dist/main.js";
                     await client.GetAsync(requestUri);
                 }
             }

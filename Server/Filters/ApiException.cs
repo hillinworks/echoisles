@@ -1,6 +1,6 @@
 using System;
 
-namespace AspNetCoreSpa.Server.Filters
+namespace EchoIsles.Server.Filters
 {
 
     public class ApiException : Exception
@@ -12,12 +12,12 @@ namespace AspNetCoreSpa.Server.Filters
         public ApiException(string message, int statusCode = 500, ValidationErrorCollection errors = null) :
             base(message)
         {
-            StatusCode = statusCode;
-            Errors = errors;
+            this.StatusCode = statusCode;
+            this.Errors = errors;
         }
         public ApiException(Exception ex, int statusCode = 500) : base(ex.Message)
         {
-            StatusCode = statusCode;
+            this.StatusCode = statusCode;
         }
     }
 

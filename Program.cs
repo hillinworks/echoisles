@@ -1,9 +1,9 @@
 ﻿using System.IO;
-using AspNetCoreSpa.Server;
+using EchoIsles.Server;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 
-namespace AspNetCoreSpa
+namespace EchoIsles
 {
     public class Program
     {

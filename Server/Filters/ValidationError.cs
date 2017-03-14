@@ -1,5 +1,5 @@
 
-namespace AspNetCoreSpa.Server.Filters
+namespace EchoIsles.Server.Filters
 {
 
 	/// <summary>
@@ -27,9 +27,9 @@ namespace AspNetCoreSpa.Server.Filters
 
 		public ValidationError(string message, string fieldName = null, string id = null)            
 		{
-			Message = message;
-			ControlID = fieldName;
-			ID = id;
+			this.Message = message;
+			this.ControlID = fieldName;
+			this.ID = id;
 		}
 
 	}

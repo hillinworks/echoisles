@@ -1,9 +1,9 @@
 using System;
-using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Logging;
 
-namespace AspNetCoreSpa.Server.Filters
+namespace EchoIsles.Server.Filters
 {
     public class ApiExceptionFilter : ExceptionFilterAttribute
     {

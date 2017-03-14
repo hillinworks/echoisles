@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Security.Claims;
 
-namespace AspNetCoreSpa.Server.Extensions
+namespace EchoIsles.Server.Extensions
 {
     public static class IdentityExtensions
     {

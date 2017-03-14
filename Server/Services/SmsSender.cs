@@ -4,11 +4,11 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
-using AspNetCoreSpa.Server.Services.Abstract;
+using EchoIsles.Server.Services.Abstract;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace AspNetCoreSpa.Server.Services
+namespace EchoIsles.Server.Services
 {
     // This class is used by the application to send Email and SMS
     // when you turn on two-factor authentication in ASP.NET Identity.

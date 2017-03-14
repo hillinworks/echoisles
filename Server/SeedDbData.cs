@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using AspNetCoreSpa.Server.Entities;
+using EchoIsles.Server.Entities;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace AspNetCoreSpa.Server
+namespace EchoIsles.Server
 {
     public class SeedDbData
     {
@@ -23,9 +23,9 @@ namespace AspNetCoreSpa.Server
             _roleManager = serviceScope.ServiceProvider.GetService<RoleManager<ApplicationRole>>();
             _userManager = serviceScope.ServiceProvider.GetService<UserManager<ApplicationUser>>();
             _context = context;
-            CreateRoles(); // Add roles
-            CreateUsers(); // Add users
-            AddLanguagesAndContent();
+            this.CreateRoles(); // Add roles
+            this.CreateUsers(); // Add users
+            this.AddLanguagesAndContent();
         }
 
         private void CreateRoles()

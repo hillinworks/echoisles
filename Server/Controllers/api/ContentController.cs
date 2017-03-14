@@ -1,10 +1,10 @@
 using System.Linq;
-using AspNetCoreSpa.Server.ViewModels;
+using EchoIsles.Server.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace AspNetCoreSpa.Server.Controllers.api
+namespace EchoIsles.Server.Controllers.api
 {
     [Route("api/[controller]")]
     [AllowAnonymous]
@@ -22,7 +22,7 @@ namespace AspNetCoreSpa.Server.Controllers.api
         {
             var langs = _context.Languageses.ToList();
 
-            return Ok(langs);
+            return this.Ok(langs);
         }
 
         [HttpGet]
@@ -39,7 +39,7 @@ namespace AspNetCoreSpa.Server.Controllers.api
                               Value = t.Text
                           }).ToDictionary(x => x.Key, x => x.Value);
 
-            return Ok(result);
+            return this.Ok(result);
         }
 
         [HttpPost]
@@ -56,11 +56,11 @@ namespace AspNetCoreSpa.Server.Controllers.api
                     _context.ContentText.Add(contentText);
                     _context.Entry(contentText).State = EntityState.Modified;
                     _context.SaveChanges();
-                    return Ok(model);
+                    return this.Ok(model);
                 }
 
             }
-            return BadRequest("Unable to update content");
+            return this.BadRequest("Unable to update content");
         }
 
 

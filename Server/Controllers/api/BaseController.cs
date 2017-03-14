@@ -1,8 +1,8 @@
-using AspNetCoreSpa.Server.Filters;
+using EchoIsles.Server.Filters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace AspNetCoreSpa.Server.Controllers.api
+namespace EchoIsles.Server.Controllers.api
 {
     [Authorize]
     [ServiceFilter(typeof(ApiExceptionFilter))]

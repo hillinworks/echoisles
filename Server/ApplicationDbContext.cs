@@ -1,8 +1,8 @@
-﻿using AspNetCoreSpa.Server.Entities;
+﻿using EchoIsles.Server.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
-namespace AspNetCoreSpa.Server
+namespace EchoIsles.Server
 {
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, int>
     {
@@ -14,7 +14,7 @@ namespace AspNetCoreSpa.Server
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
         {
-            Database.EnsureCreated();
+            this.Database.EnsureCreated();
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

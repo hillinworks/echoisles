@@ -1,11 +1,11 @@
 using System;
 using System.Threading.Tasks;
-using AspNetCoreSpa.Server.Services.Abstract;
+using EchoIsles.Server.Services.Abstract;
 using MailKit.Net.Smtp;
 using Microsoft.Extensions.Logging;
 using MimeKit;
 
-namespace AspNetCoreSpa.Server.Services
+namespace EchoIsles.Server.Services
 {
     public class EmailSender : IEmailSender
     {
@@ -25,7 +25,7 @@ namespace AspNetCoreSpa.Server.Services
             switch (type)
             {
                 case MailType.Register:
-                    return await SendRegisterEmailAsync(new EmailModel { To = emailModel.To }, extraData);
+                    return await this.SendRegisterEmailAsync(new EmailModel { To = emailModel.To }, extraData);
                 default:
                     throw new ArgumentOutOfRangeException(nameof(type), type, null);
             }
@@ -38,7 +38,7 @@ namespace AspNetCoreSpa.Server.Services
             emailModel.HtmlBody = extraData;
             emailModel.TextBody = extraData;
 
-            SendEmailAsync(emailModel).Wait();
+            this.SendEmailAsync(emailModel).Wait();
 
             return await Task.Run(() => true);
         }

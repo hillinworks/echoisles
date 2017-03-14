@@ -1,4 +1,4 @@
-namespace AspNetCoreSpa.Server.Services.Abstract
+namespace EchoIsles.Server.Services.Abstract
 {
     public class EmailModel
     {

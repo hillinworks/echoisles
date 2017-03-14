@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using AspNetCoreSpa.Server.Entities;
+using EchoIsles.Server.Entities;
 using Microsoft.AspNetCore.Mvc;
 
-namespace AspNetCoreSpa.Server.Controllers.api
+namespace EchoIsles.Server.Controllers.api
 {
     public class AppUtils
     {

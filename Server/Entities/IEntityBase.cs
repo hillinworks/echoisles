@@ -1,4 +1,4 @@
-﻿namespace AspNetCoreSpa.Server.Entities
+﻿namespace EchoIsles.Server.Entities
 {
     public interface IEntityBase
     {

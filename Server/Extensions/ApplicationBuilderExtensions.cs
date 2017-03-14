@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
 
-namespace AspNetCoreSpa.Server.Extensions
+namespace EchoIsles.Server.Extensions
 {
     public static class ApplicationBuilderExtensions
     {

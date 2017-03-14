@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using AspNet.Security.OpenIdConnect.Extensions;
 using AspNet.Security.OpenIdConnect.Primitives;
 using AspNet.Security.OpenIdConnect.Server;
-using AspNetCoreSpa.Server.Entities;
+using EchoIsles.Server.Entities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Authentication;
@@ -15,7 +15,7 @@ using OpenIddict.Models;
 
 // For more information on enabling MVC for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
 
-namespace AspNetCoreSpa.Server.Controllers.api
+namespace EchoIsles.Server.Controllers.api
 {
     public class AuthorizationController : BaseController
     {
@@ -46,7 +46,7 @@ namespace AspNetCoreSpa.Server.Controllers.api
                 var user = await _userManager.FindByNameAsync(request.Username);
                 if (user == null)
                 {
-                    return BadRequest(new OpenIdConnectResponse
+                    return this.BadRequest(new OpenIdConnectResponse
                     {
                         Error = OpenIdConnectConstants.Errors.InvalidGrant,
                         ErrorDescription = "The username/password couple is invalid."
@@ -56,7 +56,7 @@ namespace AspNetCoreSpa.Server.Controllers.api
                 // Ensure the user is allowed to sign in.
                 if (!await _signInManager.CanSignInAsync(user))
                 {
-                    return BadRequest(new OpenIdConnectResponse
+                    return this.BadRequest(new OpenIdConnectResponse
                     {
                         Error = OpenIdConnectConstants.Errors.InvalidGrant,
                         ErrorDescription = "The specified user is not allowed to sign in."
@@ -66,7 +66,7 @@ namespace AspNetCoreSpa.Server.Controllers.api
                 // Reject the token request if two-factor authentication has been enabled by the user.
                 if (_userManager.SupportsUserTwoFactor && await _userManager.GetTwoFactorEnabledAsync(user))
                 {
-                    return BadRequest(new OpenIdConnectResponse
+                    return this.BadRequest(new OpenIdConnectResponse
                     {
                         Error = OpenIdConnectConstants.Errors.InvalidGrant,
                         ErrorDescription = "The specified user is not allowed to sign in."
@@ -76,7 +76,7 @@ namespace AspNetCoreSpa.Server.Controllers.api
                 // Ensure the user is not already locked out.
                 if (_userManager.SupportsUserLockout && await _userManager.IsLockedOutAsync(user))
                 {
-                    return BadRequest(new OpenIdConnectResponse
+                    return this.BadRequest(new OpenIdConnectResponse
                     {
                         Error = OpenIdConnectConstants.Errors.InvalidGrant,
                         ErrorDescription = "The username/password couple is invalid."
@@ -91,7 +91,7 @@ namespace AspNetCoreSpa.Server.Controllers.api
                         await _userManager.AccessFailedAsync(user);
                     }
 
-                    return BadRequest(new OpenIdConnectResponse
+                    return this.BadRequest(new OpenIdConnectResponse
                     {
                         Error = OpenIdConnectConstants.Errors.InvalidGrant,
                         ErrorDescription = "The username/password couple is invalid."
@@ -104,22 +104,22 @@ namespace AspNetCoreSpa.Server.Controllers.api
                 }
 
                 // Create a new authentication ticket.
-                var ticket = await CreateTicketAsync(request, user);
+                var ticket = await this.CreateTicketAsync(request, user);
 
-                return SignIn(ticket.Principal, ticket.Properties, ticket.AuthenticationScheme);
+                return this.SignIn(ticket.Principal, ticket.Properties, ticket.AuthenticationScheme);
             }
 
             else if (request.IsRefreshTokenGrantType())
             {
                 // Retrieve the claims principal stored in the refresh token.
-                var info = await HttpContext.Authentication.GetAuthenticateInfoAsync(
+                var info = await this.HttpContext.Authentication.GetAuthenticateInfoAsync(
                     OpenIdConnectServerDefaults.AuthenticationScheme);
 
                 // Retrieve the user profile corresponding to the refresh token.
                 var user = await _userManager.GetUserAsync(info.Principal);
                 if (user == null)
                 {
-                    return BadRequest(new OpenIdConnectResponse
+                    return this.BadRequest(new OpenIdConnectResponse
                     {
                         Error = OpenIdConnectConstants.Errors.InvalidGrant,
                         ErrorDescription = "The refresh token is no longer valid."
@@ -129,7 +129,7 @@ namespace AspNetCoreSpa.Server.Controllers.api
                 // Ensure the user is still allowed to sign in.
                 if (!await _signInManager.CanSignInAsync(user))
                 {
-                    return BadRequest(new OpenIdConnectResponse
+                    return this.BadRequest(new OpenIdConnectResponse
                     {
                         Error = OpenIdConnectConstants.Errors.InvalidGrant,
                         ErrorDescription = "The user is no longer allowed to sign in."
@@ -138,12 +138,12 @@ namespace AspNetCoreSpa.Server.Controllers.api
 
                 // Create a new authentication ticket, but reuse the properties stored
                 // in the refresh token, including the scopes originally granted.
-                var ticket = await CreateTicketAsync(request, user, info.Properties);
+                var ticket = await this.CreateTicketAsync(request, user, info.Properties);
 
-                return SignIn(ticket.Principal, ticket.Properties, ticket.AuthenticationScheme);
+                return this.SignIn(ticket.Principal, ticket.Properties, ticket.AuthenticationScheme);
             }
 
-            return BadRequest(new OpenIdConnectResponse
+            return this.BadRequest(new OpenIdConnectResponse
             {
                 Error = OpenIdConnectConstants.Errors.UnsupportedGrantType,
                 ErrorDescription = "The specified grant type is not supported."
