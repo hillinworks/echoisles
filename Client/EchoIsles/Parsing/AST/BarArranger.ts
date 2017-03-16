@@ -92,10 +92,12 @@ export class BarArranger {
             groups.sort(PreciseDuration.createComparer<GroupType>(g => g.key));
 
             let isFirstBeat = true;
+            let currentPosition = PreciseDuration.zero;
             for (let group of groups) {
-                
+
                 const columnIndex = this.bar.columns.length;
-                const column = new BarColumn(this.bar, columnIndex);
+                const column = new BarColumn(this.bar, columnIndex, group.key.minus(currentPosition));
+                currentPosition = group.key;
 
                 for (let beat of group.values) {
                     beat.ownerColumn = column;

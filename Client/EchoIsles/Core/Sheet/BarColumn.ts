@@ -7,20 +7,16 @@ import { IBarElement } from "./IBarElement";
 import { Chord } from "./Tablature/Chord";
 
 export class BarColumn extends VirtualElement implements IBarElement {
-    readonly ownerBar: Bar;
-    readonly index: number;
     readonly voiceBeats = new Array<Beat>();
     chord: Chord;
     lyrics: LyricsSegment;
     isFirstOfSegment: boolean;
 
-    constructor(owner: Bar, index: number) {
+    constructor(readonly ownerBar: Bar, readonly index: number, readonly position: PreciseDuration) {
         super();
-        this.ownerBar = owner;
-        this.index = index;
     }
 
-    get duration(): PreciseDuration {
-        return PreciseDuration.min(this.voiceBeats, v => v.duration);
+    get minimumBeatDuration(): PreciseDuration {
+        return PreciseDuration.min(this.voiceBeats, b => b.duration);
     }
 }
