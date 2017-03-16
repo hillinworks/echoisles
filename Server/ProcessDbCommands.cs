@@ -20,25 +20,7 @@ namespace EchoIsles.Server
                 if (args.Contains("dropdb"))
                 {
                     Console.WriteLine("Dropping database");
-<<<<<<< HEAD
-                    var db = ProcessDbCommands.GetApplicationDbContext(scope);
                     db.Database.EnsureDeleted();
-                    db.Database.EnsureCreated();
-                }
-                if (args.Contains("migratedb"))
-                {
-                    Console.WriteLine("Migrating database");
-                    var db = ProcessDbCommands.GetApplicationDbContext(scope);
-                    db.Database.Migrate();
-                }
-                if (args.Contains("seeddb"))
-                {
-                    Console.WriteLine("Seeding database");
-                    var db = ProcessDbCommands.GetApplicationDbContext(scope);
-                    db.Seed(host);
-=======
-                    db.Database.EnsureDeleted();
->>>>>>> spa/master
                 }
 
                 // if (args.Contains("migratedb"))

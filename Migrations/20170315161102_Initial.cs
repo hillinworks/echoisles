@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore.Migrations;
 
-namespace AspNetCoreSpa.Migrations
+namespace EchoIsles.Migrations
 {
     public partial class Initial : Migration
     {

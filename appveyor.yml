@@ -33,7 +33,7 @@ before_build:
   - npm run build:prod                                           # Client production artefacts
   - dotnet restore
 build:
-  project: AspNetCoreSpa.csproj
+  project: EchoIsles.csproj
   publish_wap: true
   verbosity: quiet
   

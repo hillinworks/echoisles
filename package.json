@@ -10,7 +10,7 @@
     "typescript2",
     "bootstrap4"
   ],
-  "repository": "git+https://github.com/asadsahi/AspNetCoreSpa.git",
+  "repository": "git+https://github.com/asadsahi/EchoIsles.git",
   "author": "Asad Sahi <asadazmat@gmail.com>",
   "scripts": {
     "rimraf": "rimraf",

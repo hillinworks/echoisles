@@ -3,9 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
-using AspNetCoreSpa.Server;
+using EchoIsles.Server;
 
-namespace AspNetCoreSpa.Migrations
+namespace EchoIsles.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     partial class ApplicationDbContextModelSnapshot : ModelSnapshot
@@ -15,7 +15,7 @@ namespace AspNetCoreSpa.Migrations
             modelBuilder
                 .HasAnnotation("ProductVersion", "1.1.1");
 
-            modelBuilder.Entity("AspNetCoreSpa.Server.Entities.ApplicationRole", b =>
+            modelBuilder.Entity("EchoIsles.Server.Entities.ApplicationRole", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd();
@@ -41,7 +41,7 @@ namespace AspNetCoreSpa.Migrations
                     b.ToTable("AspNetRoles");
                 });
 
-            modelBuilder.Entity("AspNetCoreSpa.Server.Entities.ApplicationUser", b =>
+            modelBuilder.Entity("EchoIsles.Server.Entities.ApplicationUser", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd();
@@ -101,7 +101,7 @@ namespace AspNetCoreSpa.Migrations
                     b.ToTable("AspNetUsers");
                 });
 
-            modelBuilder.Entity("AspNetCoreSpa.Server.Entities.Content", b =>
+            modelBuilder.Entity("EchoIsles.Server.Entities.Content", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd();
@@ -115,7 +115,7 @@ namespace AspNetCoreSpa.Migrations
                     b.ToTable("Content");
                 });
 
-            modelBuilder.Entity("AspNetCoreSpa.Server.Entities.ContentText", b =>
+            modelBuilder.Entity("EchoIsles.Server.Entities.ContentText", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd();
@@ -137,7 +137,7 @@ namespace AspNetCoreSpa.Migrations
                     b.ToTable("ContentText");
                 });
 
-            modelBuilder.Entity("AspNetCoreSpa.Server.Entities.Language", b =>
+            modelBuilder.Entity("EchoIsles.Server.Entities.Language", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd();
@@ -312,14 +312,14 @@ namespace AspNetCoreSpa.Migrations
                     b.ToTable("OpenIddictTokens");
                 });
 
-            modelBuilder.Entity("AspNetCoreSpa.Server.Entities.ContentText", b =>
+            modelBuilder.Entity("EchoIsles.Server.Entities.ContentText", b =>
                 {
-                    b.HasOne("AspNetCoreSpa.Server.Entities.Content", "Content")
+                    b.HasOne("EchoIsles.Server.Entities.Content", "Content")
                         .WithMany("ContentTexts")
                         .HasForeignKey("ContentId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.HasOne("AspNetCoreSpa.Server.Entities.Language", "Language")
+                    b.HasOne("EchoIsles.Server.Entities.Language", "Language")
                         .WithMany("ContentTexts")
                         .HasForeignKey("LanguageId")
                         .OnDelete(DeleteBehavior.Cascade);
@@ -327,7 +327,7 @@ namespace AspNetCoreSpa.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.EntityFrameworkCore.IdentityRoleClaim<int>", b =>
                 {
-                    b.HasOne("AspNetCoreSpa.Server.Entities.ApplicationRole")
+                    b.HasOne("EchoIsles.Server.Entities.ApplicationRole")
                         .WithMany("Claims")
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade);
@@ -335,7 +335,7 @@ namespace AspNetCoreSpa.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.EntityFrameworkCore.IdentityUserClaim<int>", b =>
                 {
-                    b.HasOne("AspNetCoreSpa.Server.Entities.ApplicationUser")
+                    b.HasOne("EchoIsles.Server.Entities.ApplicationUser")
                         .WithMany("Claims")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade);
@@ -343,7 +343,7 @@ namespace AspNetCoreSpa.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.EntityFrameworkCore.IdentityUserLogin<int>", b =>
                 {
-                    b.HasOne("AspNetCoreSpa.Server.Entities.ApplicationUser")
+                    b.HasOne("EchoIsles.Server.Entities.ApplicationUser")
                         .WithMany("Logins")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade);
@@ -351,12 +351,12 @@ namespace AspNetCoreSpa.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.EntityFrameworkCore.IdentityUserRole<int>", b =>
                 {
-                    b.HasOne("AspNetCoreSpa.Server.Entities.ApplicationRole")
+                    b.HasOne("EchoIsles.Server.Entities.ApplicationRole")
                         .WithMany("Users")
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.HasOne("AspNetCoreSpa.Server.Entities.ApplicationUser")
+                    b.HasOne("EchoIsles.Server.Entities.ApplicationUser")
                         .WithMany("Roles")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade);

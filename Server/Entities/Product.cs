@@ -1,7 +1,7 @@
 
 using System.ComponentModel.DataAnnotations;
 
-namespace AspNetCoreSpa.Server.Entities
+namespace EchoIsles.Server.Entities
 {
     public class Product
     {
