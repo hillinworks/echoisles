@@ -7,11 +7,13 @@
 
 * [ASP.NET Core](http://www.dot.net/)
 * [Entity Framework Core](https://docs.efproject.net/en/latest/)
+    * Both Sql Server and Sql lite databases are supported (Check installation instrcutions for more details)
 * [Angular](https://angular.io/)
+* [Angular CLI](https://cli.angular.io/) (Only code scaffolding for now)
 * [Webpack 2](https://webpack.github.io/)
 * [Bootstrap 4](http://v4-alpha.getbootstrap.com/)
 * [ng-bootstrap](https://ng-bootstrap.github.io/)
-* [ng2-translate](https://github.com/ocombe/ng2-translate)
+* [@ngx-translate](http://www.ngx-translate.com/)
 * [Typescript 2](http://www.typescriptlang.org/)
 * [SASS](http://sass-lang.com/) support
 * [Best practices](https://angular.io/docs/ts/latest/guide/style-guide.html) in file and application organization for Angular.
@@ -21,8 +23,7 @@
   * with [Remap Istanbul](https://github.com/SitePen/remap-istanbul) for remapping Javascript to TypeScript coverage
 * [HMR](https://webpack.github.io/docs/hot-module-replacement.html) (Hot Module Replacement) with Webpack
 * Webpack DLL support for fast rebuilds (~ < 0.5 second)
-* [compodoc](https://github.com/compodoc/compodoc) for better angular documentation
-* [Typedoc](http://typedoc.io/) for typescript documentation
+* [Compodoc](https://compodoc.github.io/compodoc/) for Angular documentation
 * [Server](https://github.com/aspnet/dotnet-watch) and [client](https://webpack.github.io/docs/hot-module-replacement.html) watches
 * Login and Registration functionality using [Asp.Net Identity & JWT](https://docs.asp.net/en/latest/security/authentication/identity.html)
 * Token based authentication using [Openiddict](https://github.com/openiddict/openiddict-core)
@@ -37,10 +38,10 @@
 ## Pre-requisites
 
 1. [.Net core sdk](https://www.microsoft.com/net/core#windows)
-2. Either [VSCode](https://code.visualstudio.com/) with [C#](https://marketplace.visualstudio.com/items?itemName=ms-vscode.csharp) extension OR [Visual studio 2015 update 3](https://www.visualstudio.com/) with [.Net Core tooling](https://www.microsoft.com/net/core#windows)
+2. Either [VSCode](https://code.visualstudio.com/) with [C#](https://marketplace.visualstudio.com/items?itemName=ms-vscode.csharp) extension OR [Visual studio 2017](https://www.visualstudio.com/)
 3. [Nodejs](https://nodejs.org/en/)
 
-**Make sure you have Node version >= 6.0 and NPM >= 3**
+**Make sure you have Node version >= 6.9.x and NPM >= 3**
 
 ## Installation
 ```
@@ -50,12 +51,15 @@
     cd AspNetCoreSpa
 3. dotnet restore
 4. Install global dependencies
-    npm install protractor rimraf -g
+    npm install protractor rimraf http-server @angular/cli -g
 5. npm install
 6. Run the app (Development mode):
-    i) One way:
+    * If you are running the project for first time:
+      dotnet run migratedb seeddb (this will create database, apply migrations and seed the data)
+    Subsequently
+    i) One way (from VScode or Visual studio IDE):
         F5 (This will automatically launch browser)
-    ii) Another way
+    ii) Another way (from command line)
         set ASPNETCORE_ENVIRONMENT=Development
         `dotnet run` (for single run) OR `dotnet watch run` (in watch mode)
         Browse using http://localhost:5000 or http://localhost:5001 
@@ -64,10 +68,33 @@
     set ASPNETCORE_ENVIRONMENT=Production
     `dotnet run` (for single run) OR `dotnet watch run` (in watch mode)
     Browse using http://localhost:5000 or http://localhost:5001 
+8. Notes on setting up database
+    * This project supports both sql server and sql lite databases
+    * Currently this project is configured to run under sqllite to speedup development cycle and the migrations added in this project are W.R.T sql lite
+    * To run under sql server:
+        * delete bin & Migrations folders
+        * Flip the switch in appsettings.json called `useSqLite` to `false`, this should point to use local sql server setup   as default instance.
+        * Run `dotnet ef migrations add "MigrationName"`
+        
+    * CAUTION: If you want to drop database while in development, you can run command `dotnet run dropdb`
 
 ```
 
 ## Other commands
+
+### Scaffold Angular components using Angular CLI
+
+Scaffold  | Usage
+---       | ---
+Component | `ng g component my-new-component`
+Directive | `ng g directive my-new-directive`
+Pipe      | `ng g pipe my-new-pipe`
+Service   | `ng g service my-new-service`
+Class     | `ng g class my-new-class`
+Guard     | `ng g guard my-new-guard`
+Interface | `ng g interface my-new-interface`
+Enum      | `ng g enum my-new-enum`
+Module    | `ng g module my-module`
 
 ### run Angular tests
 ```bash
@@ -78,20 +105,14 @@ npm test
 ```bash
 npm run test:watch
 ```
-### Typescript documentation
-
- * Steps to generate:
-    * npm run docs
-    * cd docs
-    * http-server
-
 ### Compodoc Angular documentation
-
  * Steps to generate:
     * npm i compodoc -g
     * npm run compodoc
     * cd documentation
     * http-server
+
+Compodoc documentation: ![alt text](compodoc.jpg "compodoc documentation")
 
 ```
 ### run end-to-end tests

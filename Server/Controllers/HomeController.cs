@@ -70,7 +70,8 @@ namespace EchoIsles.Server.Controllers
             }
 
             var info = new System.IO.DirectoryInfo(basePath);
-            var file = info.GetFiles().Where(f => f.Name.StartsWith("main.") && !f.Name.EndsWith("bundle.map"));
+            var file = info.GetFiles()
+                .Where(f => _env.IsDevelopment() ? f.Name == "main.js" : f.Name.StartsWith("main.") && !f.Name.EndsWith("bundle.map"));
             return file.FirstOrDefault().Name;
         }
 

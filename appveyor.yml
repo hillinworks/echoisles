@@ -1,4 +1,5 @@
 version: 1.0.{build}
+image: Visual Studio 2017
 pull_requests:
   do_not_increment_build_number: true
 branches:
@@ -32,20 +33,19 @@ before_build:
   - npm run build:prod                                           # Client production artefacts
   - dotnet restore
 build:
-  project: AspNetCoreSpa.xproj
+  project: AspNetCoreSpa.csproj
   publish_wap: true
-  verbosity: minimal
-
+  verbosity: quiet
+  
 after_build:
 - cmd: >-
     dotnet publish .\ --output %appveyor_build_folder%\dist
 
-    dotnet publish-iis --publish-folder %appveyor_build_folder%\dist --framework %publish:FullTargetFramework%
+# dotnet publish-iis --publish-folder %appveyor_build_folder%\dist --framework %publish:FullTargetFramework%
 
 artifacts:
 - path: dist
   name: web-app
 
-## Commented out as VSTS is deploying
-# deploy_script:
-# - cmd: '"C:\Program Files (x86)\IIS\Microsoft Web Deploy V3\msdeploy.exe" -source:IisApp=''%appveyor_build_folder%\dist'' -dest:IisApp=''%website_name%'',ComputerName=''https://%website_name%.scm.azurewebsites.net/msdeploy.axd'',UserName=''$%website_name%'',Password=''%website_psw%'',IncludeAcls=''False'',AuthType=''Basic'' -verb:sync -enablerule:AppOffline -enableRule:DoNotDeleteRule -retryAttempts:2'
+deploy_script:
+- cmd: '"C:\Program Files (x86)\IIS\Microsoft Web Deploy V3\msdeploy.exe" -verb:sync -source:IisApp=''%appveyor_build_folder%\dist'' -dest:IisApp=''%website_name%'',ComputerName=''https://%website_name%.scm.azurewebsites.net/msdeploy.axd'',UserName=''$%website_name%'',Password=''%website_psw%'',IncludeAcls=''False'',AuthType=''Basic'' -enablerule:AppOffline -retryAttempts:2'

@@ -16,9 +16,11 @@ namespace EchoIsles.Server
 
             using (var scope = services.CreateScope())
             {
+                var db = GetApplicationDbContext(scope);
                 if (args.Contains("dropdb"))
                 {
                     Console.WriteLine("Dropping database");
+<<<<<<< HEAD
                     var db = ProcessDbCommands.GetApplicationDbContext(scope);
                     db.Database.EnsureDeleted();
                     db.Database.EnsureCreated();
@@ -34,7 +36,22 @@ namespace EchoIsles.Server
                     Console.WriteLine("Seeding database");
                     var db = ProcessDbCommands.GetApplicationDbContext(scope);
                     db.Seed(host);
+=======
+                    db.Database.EnsureDeleted();
+>>>>>>> spa/master
                 }
+
+                // if (args.Contains("migratedb"))
+                // {
+                Console.WriteLine("Migrating database");
+                db.Database.Migrate();
+                // }
+
+                // if (args.Contains("seeddb"))
+                // {
+                Console.WriteLine("Seeding database");
+                db.Seed(host);
+                // }
             }
         }
 

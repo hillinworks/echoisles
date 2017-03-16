@@ -2,7 +2,7 @@ import { Component, ViewEncapsulation, OnInit } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { Observable } from 'rxjs/Observable';
 import { Store } from '@ngrx/store';
-import { TranslateService } from 'ng2-translate/ng2-translate';
+import { TranslateService } from '@ngx-translate/core';
 import { RouterModule } from '@angular/router';
 
 import { AppState } from './app-store';
@@ -46,6 +46,7 @@ export class AppComponent implements OnInit {
     // This starts up the token refresh preocess for the app
     this.tokens.startupTokenRefresh()
       .subscribe(
+      // tslint:disable-next-line:no-console
       () => console.info('Startup success'),
       error => console.warn(error)
       );

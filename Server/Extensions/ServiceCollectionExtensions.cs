@@ -1,20 +1,21 @@
 ﻿using System.IO;
-using System.Net;
 using System.Security.Cryptography.X509Certificates;
-using System.Threading.Tasks;
-using EchoIsles.Server.Entities;
-using EchoIsles.Server.Filters;
-using EchoIsles.Server.Services;
-using EchoIsles.Server.Services.Abstract;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Builder;
+using AspNetCoreSpa.Server.Entities;
+using AspNetCoreSpa.Server.Filters;
+using AspNetCoreSpa.Server.Services;
+using AspNetCoreSpa.Server.Services.Abstract;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Net;
+using System.Threading.Tasks;
+using AspNet.Security.OpenIdConnect.Primitives;
 
-namespace EchoIsles.Server.Extensions
+namespace AspNetCoreSpa.Server.Extensions
 {
     public static class ServiceCollectionExtensions
     {
@@ -51,6 +52,7 @@ namespace EchoIsles.Server.Extensions
                 options.Password.RequiredLength = 4;
                 options.Password.RequireNonAlphanumeric = false;
                 options.Password.RequireUppercase = false;
+                options.Cookies.ApplicationCookie.AutomaticChallenge = false;
                 options.Cookies.ApplicationCookie.LoginPath = "/login";
                 options.Cookies.ApplicationCookie.Events = new CookieAuthenticationEvents
                 {
@@ -80,6 +82,15 @@ namespace EchoIsles.Server.Extensions
         }
         public static IServiceCollection AddCustomOpenIddict(this IServiceCollection services)
         {
+            // Configure Identity to use the same JWT claims as OpenIddict instead
+            // of the legacy WS-Federation claims it uses by default (ClaimTypes),
+            // which saves you from doing the mapping in your authorization controller.
+            services.Configure<IdentityOptions>(options =>
+            {
+                options.ClaimsIdentity.UserNameClaimType = OpenIdConnectConstants.Claims.Name;
+                options.ClaimsIdentity.UserIdClaimType = OpenIdConnectConstants.Claims.Subject;
+                options.ClaimsIdentity.RoleClaimType = OpenIdConnectConstants.Claims.Role;
+            });
             // Register the OpenIddict services.
             services.AddOpenIddict()
                 // Register the Entity Framework stores.
