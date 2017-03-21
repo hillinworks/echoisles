@@ -4,14 +4,27 @@ import { Size } from "../Size";
 import { Rect } from "../Rect";
 import { BarLine } from "./BarLine";
 import { BarLine as CoreBarLine } from "../../Core/MusicTheory/BarLine";
+import { Style } from "../Style";
+import { Defaults } from "../../Core/Sheet/Tablature/Defaults";
+import { DocumentRowElement } from "./DocumentRowElement";
 
 export class DocumentRow extends WidgetBase {
 
     private readonly bars = new Array<Bar>();
     private readonly barLines = new Array<BarLine>();
+    private _desiredCeilingSize: number;
+    private _desiredFloorSize: number;
 
     get barCount(): number {
         return this.bars.length;
+    }
+
+    get desiredCeilingSize(): number {
+        return this._desiredCeilingSize;
+    }
+
+    get desiredFloorSize(): number {
+        return this._desiredFloorSize;
     }
 
     addBar(bar: Bar): void {
@@ -43,7 +56,7 @@ export class DocumentRow extends WidgetBase {
         this.invalidateLayout();
     }
 
-    private *getLayoutChildren(): IterableIterator<WidgetBase> {
+    private *getLayoutChildren(): IterableIterator<DocumentRowElement> {
         for (let i = 0; i < this.barLines.length; ++i) {
             yield this.barLines[i];
 
@@ -55,14 +68,19 @@ export class DocumentRow extends WidgetBase {
 
     protected measureOverride(availableSize: Size): Size {
         let desiredWidth = 0;
-        let desiredHeight = 0;
-
+        this._desiredCeilingSize = 0;
+        this._desiredFloorSize = 0;
 
         for (let child of this.getLayoutChildren()) {
             child.measure(new Size(availableSize.width - desiredWidth, availableSize.height));
             desiredWidth += child.desiredSize.width;
-            desiredHeight = Math.max(desiredHeight, child.desiredSize.height);
+            this._desiredCeilingSize = Math.max(this._desiredCeilingSize, child.desiredCeilingSize);
+            this._desiredFloorSize = Math.max(this._desiredFloorSize, child.desiredFloorSize);
         }
+
+        const desiredHeight = Style.current.bar.lineHeight * (Defaults.strings - 1)
+            + this._desiredCeilingSize
+            + this._desiredFloorSize;
 
         return new Size(desiredWidth, desiredHeight);
     }
@@ -88,15 +106,21 @@ export class DocumentRow extends WidgetBase {
         const minimumBarWidth = this.calculateMinimumBarWidth(finalSize.width);
 
         let renderWidth = 0;
-        let renderHeight = 0;
         for (let child of this.getLayoutChildren()) {
-            const size = new Size(Math.max(child.desiredSize.width, minimumBarWidth), finalSize.height);
+            let size: Size;
+            if (child instanceof Bar) {
+                size = new Size(Math.max(child.desiredSize.width, minimumBarWidth), finalSize.height);
+            } else {
+                size = new Size(child.desiredSize.width, finalSize.height);
+            }
+
+            child.baseline = this.desiredCeilingSize;
             child.arrange(Rect.create(this.position, size));
+
             renderWidth += child.renderSize.width;
-            renderHeight = Math.max(renderHeight, child.renderSize.height);
         }
 
-        return new Size(renderWidth, renderHeight);
+        return new Size(renderWidth, this.desiredSize.height);
     }
 
     destroy(): void {

@@ -8,44 +8,16 @@ import { PreciseDuration } from "../../Core/MusicTheory/PreciseDuration";
 import { VoicePart } from "../../Core/Sheet/VoicePart";
 import { BaseNoteValue } from "../../Core/MusicTheory/BaseNoteValue";
 import { Style } from "../Style";
+import { IBeatElementContainer } from "../../Core/Sheet/IBeatElementContainer";
+import { VerticalDirection } from "../../Core/Style/VerticalDirection";
+import { Defaults } from "../../Core/Sheet/Tablature/Defaults";
+import { DocumentRowElement } from "./DocumentRowElement";
+import { Vector } from "../Vector";
+import { Rect } from "../Rect";
 
-enum ColumnParallelablity {
-    Parallelable,
-    ShareVoice,
-    NoteConflict
-}
+export class Bar extends DocumentRowElement {
 
-
-function canColumnsBeParallel(a: BarColumn, b: BarColumn): ColumnParallelablity {
-    for (let beatOfA of a.barColumn.voiceBeats) {
-        for (let beatOfB of b.barColumn.voiceBeats) {
-
-            const heightDifference = VoicePart.compareHeight(beatOfA.voicePart, beatOfB.voicePart);
-
-            if (heightDifference === 0) {   // both have same voice part
-                return ColumnParallelablity.ShareVoice;
-            } else if (heightDifference > 0) { // beatOfA is in a higher voice part
-                if (beatOfA.notes.some(noteOfA => beatOfB.notes
-                    .some(noteOfB => noteOfB.string <= noteOfA.string))) {
-                    // but beatOfB have some note on a higher or equal string than beatOfA
-                    return ColumnParallelablity.NoteConflict;
-                }
-            } else if (heightDifference < 0) { // beatOfB is in a higher voice part
-                if (beatOfA.notes.some(noteOfA => beatOfB.notes
-                    .some(noteOfB => noteOfB.string >= noteOfA.string))) {
-                    // but beatOfA have some note on a higher or equal string than beatOfB
-                    return ColumnParallelablity.NoteConflict;
-                }
-            }
-        }
-    }
-
-    return ColumnParallelablity.Parallelable;
-}
-
-export class Bar extends WidgetBase {
-
-    private readonly columns = new Array<BarColumn>();
+    readonly columns = new Array<BarColumn>();
     private readonly columnSpacings = new Array<number>();
     private readonly voices = new Array<Voice>();
 
@@ -61,57 +33,98 @@ export class Bar extends WidgetBase {
 
     protected measureOverride(availableSize: Size): Size {
 
-        // find the maximum size of the fattest column, and decide desired height by the way
+        // measure all columns first
         const columnAvailableSize = new Size(Infinity, availableSize.height);
-        let maximumColumnWidth = 0;
-        let desiredHeight = 0;
         for (let column of this.columns) {
             column.measure(columnAvailableSize);
-            maximumColumnWidth = Math.max(maximumColumnWidth, column.desiredSize.width);
-            desiredHeight = Math.max(desiredHeight, column.desiredSize.height);
         }
 
-        // calculate the duration distances between columns, and find out the minimum distance among them
-        // the minimum distance MUST be between two columns that share the same voice part, but not 
-        // necessarily neightbors
-        const distances = new Array<number>(this.columns.length - 1);
-        let minDistance = BaseNoteValue.getDuration(this.bar.documentState.time.noteValue).fixedPointValue;
+        // decide column locations and measure desired width
+        const barStyle = Style.current.bar;
 
-        for (let i = 0; i < distances.length; ++i) {
-            const firstColumn = this.columns[i];
-            let distanceDetermined = false;
-            for (let j = i + 1; j < this.columns.length; ++j) {
-                const secondColumn = this.columns[j];
-                const parallelability = canColumnsBeParallel(firstColumn, secondColumn);
-                if (parallelability !== ColumnParallelablity.Parallelable) {
-                    if (!distanceDetermined) {
-                        distances[i] = secondColumn.barColumn.position.fixedPointValue -
-                            firstColumn.barColumn.position.fixedPointValue;
-                        distanceDetermined = true;
-                    }
+        let desiredWidth = 0;
 
-                    if (parallelability === ColumnParallelablity.ShareVoice) {
-                        minDistance = Math.min(minDistance, distances[i]);
-                        break;
-                    }
+        if (this.columns.length > 0) {
+            const spacingToDuration = barStyle.minBeatSpacing / this.bar.minimumBeatDuration.fixedPointValue;
+
+            const firstColumn = this.columns[0];
+            firstColumn.relativePosition = 0;
+            let x = firstColumn.compactDesiredWidth;
+            let lastLyricsStop = firstColumn.lyricsSegment ? firstColumn.lyricsSegment.desiredSize.width : 0;
+            let lastChordStop = firstColumn.chordDiagram ? firstColumn.chordDiagram.desiredSize.width : 0;
+
+            for (let i = 1; i < this.columns.length; ++i) {
+                const column = this.columns[i];
+
+                const durationDelta = column.barColumn.position.fixedPointValue
+                    - this.columns[i - 1].barColumn.position.fixedPointValue;
+                const spacing = Math.min(spacingToDuration * durationDelta, barStyle.maxBeatSpacingRatio);
+
+                x = Math.max(x + spacing,
+                    column.lyricsSegment ? lastLyricsStop : 0,
+                    column.chordDiagram ? lastChordStop : 0);
+
+                column.relativePosition = x;
+
+                if (column.lyricsSegment) {
+                    lastLyricsStop = x + column.lyricsSegment.desiredSize.width;
                 }
+
+                if (column.chordDiagram) {
+                    lastChordStop = x + column.chordDiagram.desiredSize.width;
+                }
+            }
+
+            desiredWidth = Math.max(x, lastLyricsStop);
+        }
+
+        // measure voices to decide ceiling and floor sizes
+        let desiredCeilingSize = 0;
+        let desiredFloorSize = 0;
+
+        for (let voice of this.voices) {
+            voice.measure(availableSize);
+            switch (VoicePart.getEpitaxyPosition(voice.voice.voicePart)) {
+                case VerticalDirection.Above:
+                    desiredCeilingSize = Math.max(desiredCeilingSize, voice.desiredEpitaxySize);
+                    break;
+                case VerticalDirection.Under:
+                    desiredFloorSize = Math.max(desiredFloorSize, voice.desiredEpitaxySize);
+                    break;
             }
         }
 
-        // calculate spacings between columns
-        const barStyle = Style.current.bar;
-        let desiredWidth = maximumColumnWidth * this.columns.length;
-        for (let i = 0; i < distances.length; ++i) {
-            this.columnSpacings[i] = Math.min(distances[i] / minDistance, barStyle.maxBeatSpacingRatio)
-                * barStyle.minBeatSpacing;
-            desiredWidth += this.columnSpacings[i];
-        }
+        this.setDesiredCeilingSize(desiredCeilingSize);
+        this.setDesiredFloorSize(desiredFloorSize);
+
+        const desiredHeight = barStyle.lineHeight * (Defaults.strings - 1)
+            + this.desiredCeilingSize
+            + this.desiredFloorSize;
 
         return new Size(desiredWidth, desiredHeight);
     }
 
     protected arrangeOverride(finalSize: Size): Size {
-        //todo:last done here
+        let xScale = finalSize.width / this.desiredSize.width;
+
+        if (xScale < 1) {
+            // measure again if the final width is even smaller than we desired
+            this.measure(finalSize);
+            xScale = finalSize.width / this.desiredSize.width;
+        }
+
+        for (let column of this.columns) {
+            column.arrange(new Rect(this.position.x + column.relativePosition * xScale,
+                this.position.y + this.baseline,
+                column.desiredSize.width,
+                column.desiredSize.height));
+        }
+
+        for (let voice of this.voices) {
+            voice.arrange(Rect.create(this.position, finalSize));
+        }
+
+        return finalSize;
     }
 
     destroy(): void {

@@ -7,6 +7,17 @@ export enum VoicePart {
 
 export module VoicePart {
 
+    export function getEpitaxyPosition(voicePart: VoicePart): VerticalDirection {
+        switch (voicePart) {
+            case VoicePart.Treble:
+                return VerticalDirection.Above;
+            case VoicePart.Bass:
+                return VerticalDirection.Under;
+            default:
+                throw new RangeError();
+        }
+    }
+
     export function getDefaultTiePosition(voicePart: VoicePart): VerticalDirection {
         switch (voicePart) {
             case VoicePart.Treble:

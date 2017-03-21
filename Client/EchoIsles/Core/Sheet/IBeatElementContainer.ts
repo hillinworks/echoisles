@@ -1,6 +1,7 @@
 ﻿import { IBarVoiceElement } from "./IBarVoiceElement";
 import { IBeatElement } from "./IBeatElement";
 import { Beat } from "./Beat";
+import { PreciseDuration } from "../MusicTheory/PreciseDuration";
 
 export interface IBeatElementContainer extends IBarVoiceElement {
     readonly elements: IBeatElement[];
@@ -30,5 +31,19 @@ export module IBeatElementContainer {
         }
 
         return undefined;
+    }
+
+    export function getMinimumBeatDuration(container: IBeatElementContainer): PreciseDuration {
+        let minFixedDuration = Number.MAX_VALUE;
+        for (let element of container.elements) {
+            if (element instanceof Beat) {
+                minFixedDuration = Math.min(minFixedDuration, element.duration.fixedPointValue);
+            } else {
+                minFixedDuration = Math.min(minFixedDuration,
+                    getMinimumBeatDuration(element as any as IBeatElementContainer).fixedPointValue);
+            }
+        }
+
+        return new PreciseDuration(minFixedDuration);
     }
 }

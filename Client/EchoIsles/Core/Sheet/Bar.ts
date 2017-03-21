@@ -8,6 +8,7 @@ import { PreciseDuration } from "../MusicTheory/PreciseDuration";
 import { BarColumn } from "./BarColumn";
 import { AlternativeEndingPosition } from "./AlternativeEndingPosition";
 import { VoicePart } from "./VoicePart";
+import { IBeatElementContainer } from "./IBeatElementContainer";
 
 export class Bar extends Element {
     index: number;
@@ -64,5 +65,16 @@ export class Bar extends Element {
             default:
                 throw new RangeError();
         }
+    }
+
+    get minimumBeatDuration(): PreciseDuration {
+        if (this.trebleVoice === undefined || this.trebleVoice.elements.length === 0) {
+            return IBeatElementContainer.getMinimumBeatDuration(this.bassVoice);
+        } else if (this.bassVoice === undefined || this.bassVoice.elements.length === 0) {
+            return IBeatElementContainer.getMinimumBeatDuration(this.trebleVoice);
+        }
+
+        return new PreciseDuration(Math.min(IBeatElementContainer.getMinimumBeatDuration(this.bassVoice).fixedPointValue,
+            IBeatElementContainer.getMinimumBeatDuration(this.trebleVoice).fixedPointValue));
     }
 }

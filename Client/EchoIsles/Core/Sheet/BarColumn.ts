@@ -11,7 +11,7 @@ export class BarColumn extends VirtualElement implements IBarElement {
     chord: Chord;
     lyrics: LyricsSegment;
     isFirstOfSegment: boolean;
-
+    
     constructor(readonly ownerBar: Bar, readonly index: number, readonly position: PreciseDuration) {
         super();
     }
