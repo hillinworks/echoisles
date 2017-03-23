@@ -1,6 +1,6 @@
 import { NgModule, ModuleWithProviders } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
 import { HttpModule, JsonpModule } from '@angular/http';
@@ -20,10 +20,7 @@ import { FooterComponent } from './layout/footer.component';
 import { UppercasePipe } from './pipes/uppercase.pipe';
 
 // Services
-import { DataService } from './services/data.service';
-// import { AuthService } from './services/auth.service';
 import { ContentService } from './services/content.service';
-import { UtilityService } from './services/utility.service';
 
 @NgModule({
   imports: [
@@ -72,11 +69,7 @@ export class SharedModule {
       ngModule: SharedModule,
       providers: [
         FormControlService,
-        DataService,
-        // AuthService,
-        DataService,
-        ContentService,
-        UtilityService
+        ContentService
       ]
     };
   }

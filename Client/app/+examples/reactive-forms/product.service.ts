@@ -1,16 +1,16 @@
 import { Injectable } from '@angular/core';
-import { Http, Response, Headers, RequestOptions } from '@angular/http';
+import { Response } from '@angular/http';
 
 import { Observable } from 'rxjs/Observable';
 
 import { IProduct } from './product';
-import { DataService } from '../../shared/services/data.service';
+import { DataService } from '../../core/services/data.service';
 
 @Injectable()
 export class ProductService {
     private baseUrl = 'api/product';
 
-    constructor(private http: Http, private dataService: DataService) { }
+    constructor(private dataService: DataService) { }
 
     public getProducts(): Observable<any> {
         return this.dataService.get(this.baseUrl);
@@ -37,7 +37,7 @@ export class ProductService {
     }
 
     private createProduct(product: IProduct): Observable<Response> {
-        product._id = undefined;
+        product._id = '';
         return this.dataService.post(this.baseUrl, product);
     }
 
@@ -50,14 +50,14 @@ export class ProductService {
         // Return an initialized object
         return {
             _id: '0',
-            productName: null,
-            productCode: null,
+            productName: '',
+            productCode: '',
             tags: [''],
-            releaseDate: null,
-            price: null,
-            description: null,
-            starRating: null,
-            imageUrl: null
+            releaseDate: '',
+            price: 0,
+            description: '',
+            starRating: 0,
+            imageUrl: ''
         };
     }
 }

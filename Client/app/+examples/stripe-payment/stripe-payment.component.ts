@@ -1,6 +1,5 @@
 import { Component, OnInit, NgZone } from '@angular/core';
-import { UtilityService } from '../../shared/services/utility.service';
-import { Observable } from 'rxjs/Observable';
+import { UtilityService } from '../../core/services/utility.service';
 
 declare var Stripe: any;
 

@@ -1,6 +1,6 @@
 import { Component, AfterViewInit, ElementRef, ViewChild, ViewEncapsulation } from '@angular/core';
 
-import { UtilityService } from '../../shared/services/utility.service';
+import { UtilityService } from '../../core/services/utility.service';
 
 declare var SimpleMDE: any;
 
@@ -14,13 +14,14 @@ export class MarkdownEditorComponent implements AfterViewInit {
   @ViewChild('simplemde')
   public textarea: ElementRef;
 
-  constructor(private elementRef: ElementRef, private us: UtilityService) { }
+  constructor(private us: UtilityService) { }
   public ngAfterViewInit() {
     this.us.loadStyle('https://cdnjs.cloudflare.com/ajax/libs/simplemde/1.11.2/simplemde.min.css')
       .subscribe(style => {
         this.us.loadScript('https://cdnjs.cloudflare.com/ajax/libs/simplemde/1.11.2/simplemde.min.js')
           .subscribe(script => {
             const mde = new SimpleMDE({ element: this.textarea.nativeElement });
+            console.log(mde);
           });
       });
   }

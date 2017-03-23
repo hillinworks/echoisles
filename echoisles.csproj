@@ -9,31 +9,32 @@
     <PackageId>AspNetCoreSpa</PackageId>
     <UserSecretsId>aspnetcorespa-c23d27a4-eb88-4b18-9b77-2a93f3b15119</UserSecretsId>
     <RuntimeFrameworkVersion>1.1.1</RuntimeFrameworkVersion>
+    <TypeScriptCompileBlocked>true</TypeScriptCompileBlocked>
     <PackageTargetFallback>$(PackageTargetFallback);dotnet5.6;portable-net45+win8</PackageTargetFallback>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Remove="node_modules\**\*;Client\**\*" />
-    <Content Include="wwwroot\assets\skins\lightgray\content.inline.min.css" />
-    <Content Include="wwwroot\assets\skins\lightgray\content.min.css" />
-    <Content Include="wwwroot\assets\skins\lightgray\fonts\tinymce-small.eot" />
-    <Content Include="wwwroot\assets\skins\lightgray\fonts\tinymce-small.svg" />
-    <Content Include="wwwroot\assets\skins\lightgray\fonts\tinymce-small.ttf" />
-    <Content Include="wwwroot\assets\skins\lightgray\fonts\tinymce-small.woff" />
-    <Content Include="wwwroot\assets\skins\lightgray\fonts\tinymce.eot" />
-    <Content Include="wwwroot\assets\skins\lightgray\fonts\tinymce.svg" />
-    <Content Include="wwwroot\assets\skins\lightgray\fonts\tinymce.ttf" />
-    <Content Include="wwwroot\assets\skins\lightgray\fonts\tinymce.woff" />
-    <Content Include="wwwroot\assets\skins\lightgray\img\anchor.gif" />
-    <Content Include="wwwroot\assets\skins\lightgray\img\loader.gif" />
-    <Content Include="wwwroot\assets\skins\lightgray\img\object.gif" />
-    <Content Include="wwwroot\assets\skins\lightgray\img\trans.gif" />
-    <Content Include="wwwroot\assets\skins\lightgray\skin.ie7.min.css" />
-    <Content Include="wwwroot\assets\skins\lightgray\skin.min.css" />
-    <None Update="wwwroot\**\*;Views\**\*;Dockerfile">
+    <Content Include="wwwroot\assets\**\*" />
+    <!--<None Update="wwwroot\**\*;Views\**\*;Dockerfile">
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </None>
+    </None>-->
   </ItemGroup>
+
+ <Target Name="RunWebpack" AfterTargets="ComputeFilesToPublish">
+    <!-- As part of publishing, ensure the JS resources are freshly built in production mode -->
+    <!--<Exec Command="npm install" />-->
+    <Exec Command="npm run build:prod" />
+
+    <!-- Include the newly-built files in the publish output -->
+    <ItemGroup>
+      <DistFiles Include="wwwroot\dist\**;" />
+      <ResolvedFileToPublish Include="@(DistFiles->'%(FullPath)')" Exclude="@(ResolvedFileToPublish)">
+        <RelativePath>%(DistFiles.Identity)</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
 
   <ItemGroup>
     <PackageReference Include="AspNet.Security.OAuth.Introspection" Version="1.0.0-beta1-final" />
@@ -78,14 +79,14 @@
     <PackageReference Include="SendGrid.NetCore" Version="1.0.0-rtm-00002" />
     <PackageReference Include="MailKit" Version="1.12.0" />
     <PackageReference Include="Twilio" Version="5.1.1-alpha1" />
-    <PackageReference Include="Stripe.net" Version="7.4.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="10.0.1-beta1" />
-    <PackageReference Include="Webpack" Version="3.0.0" />
+    <PackageReference Include="Stripe.net" Version="7.6.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.1" />
+    <PackageReference Include="Webpack" Version="4.0.0" />
     <PackageReference Include="Serilog" Version="2.4.1-dev-00801" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="1.4.1-dev-10147" />
     <PackageReference Include="Serilog.Sinks.Seq" Version="3.2.0" />
     <PackageReference Include="Swashbuckle" Version="6.0.0-beta902" />
-    <PackageReference Include="Bogus" Version="11.0.3" />
+    <PackageReference Include="Bogus" Version="11.0.4" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="1.1.0">
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>

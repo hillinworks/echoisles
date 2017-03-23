@@ -1,7 +1,6 @@
 import { Component, OnInit, Inject, ElementRef } from '@angular/core';
 
-import { Observable } from 'rxjs/Observable';
-import { UtilityService } from '../../../shared/services/utility.service';
+import { UtilityService } from '../../../core/services/utility.service';
 
 declare var jQuery: any;
 
