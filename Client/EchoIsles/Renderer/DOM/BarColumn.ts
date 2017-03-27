@@ -5,6 +5,7 @@ import { Note } from "./Note";
 import { ChordStrumTechnique } from "./ChordStrumTechnique";
 import { LongNoteEllipse } from "./LongNoteEllipse";
 import { ChordDiagram } from "./ChordDiagram";
+import { minMax } from "../../Core/Utilities/LinqLite";
 
 export class BarColumn extends WidgetBase {
 
@@ -34,7 +35,7 @@ export class BarColumn extends WidgetBase {
         return this._lyricsSegment;
     }
 
-    get chordDiagram(): ChordDiagram {
+    get chordDiagram(): ChordDiagram | undefined {
         return this._chordDiagram;
     }
 
@@ -53,29 +54,32 @@ export class BarColumn extends WidgetBase {
     }
 
     private initializeChordStrumTechnique() {
-        if (!this.barColumn.voiceBeats.some(b => b.hasChordStrumTechnique)) {
+        const beat = this.barColumn.voiceBeats.find(b => b.hasChordStrumTechnique);
+        if (!beat) {
             return;
+        }
+
+        let { minString, maxString } = minMax(this.notes);
+
+        for (let note of this.notes) {
+            if (note.isVirtual || note.note.isTied) {
+                continue;
+            }
+
+            minString = Math.min(minString, note.note.string);
+            maxString = Math.max(maxString, note.note.string);
         }
 
         //todo: last done here
     }
 
     destroy(): void {
-        if (this._lyricsSegment) {
-            this._lyricsSegment.destroy();
-        }
-
-        if (this.chordStrumTechnique) {
-            this.chordStrumTechnique.destroy();
-        }
-
-        if (this._chordDiagram) {
-            this._chordDiagram.destroy();
-        }
-
-        this.longNoteEllipses.forEach(e => e.destroy());
-
-        this.notes.forEach(n => n.destroy());
+        this.destroyChildren(
+            this._lyricsSegment,
+            this.chordStrumTechnique,
+            this._chordDiagram,
+            this.longNoteEllipses,
+            this.notes);
     }
 
 

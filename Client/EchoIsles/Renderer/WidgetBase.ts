@@ -18,8 +18,8 @@ export class WidgetBase {
 
     }
 
-    protected get root(): IWidgetRoot {
-        return this.parent.root;
+    protected get root(): IWidgetRoot | undefined {
+        return this.parent ? this.parent.root : undefined;
     }
 
     protected get isLayoutInvalidated(): boolean {
@@ -83,6 +83,18 @@ export class WidgetBase {
     }
 
     destroy(): void {
+    }
 
+    protected destroyChildren(...children: Array<WidgetBase | WidgetBase[] | undefined>): void {
+        for (let child of children) {
+            if (child) {
+                if (child instanceof WidgetBase) {
+                    child.destroy();
+                    return;
+                }
+
+                child.forEach(c => c.destroy());
+            }
+        }
     }
 }

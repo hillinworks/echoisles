@@ -11,7 +11,7 @@ import { assert } from "../../Core/Utilities/Debug";
 import { Scanner } from "../Scanner";
 import { IParseResult, ParseHelper } from "../ParseResult";
 import { TextRange } from "../../Core/Parsing/TextRange";
-import {max} from "../../Core/Utilities/CollectionHelpers";
+import {max} from "../../Core/Utilities/LinqLite";
 
 export class AlternateDirectiveNode extends DirectiveNode {
 

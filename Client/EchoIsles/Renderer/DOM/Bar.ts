@@ -1,19 +1,15 @@
 ﻿import { WidgetBase } from "../WidgetBase";
-import { BarLine } from "../../Core/MusicTheory/BarLine";
 import { Bar as CoreBar } from "../../Core/Sheet/Bar";
 import { BarColumn } from "./BarColumn";
 import { Voice } from "./Voice";
 import { Size } from "../Size";
-import { PreciseDuration } from "../../Core/MusicTheory/PreciseDuration";
 import { VoicePart } from "../../Core/Sheet/VoicePart";
-import { BaseNoteValue } from "../../Core/MusicTheory/BaseNoteValue";
 import { Style } from "../Style";
-import { IBeatElementContainer } from "../../Core/Sheet/IBeatElementContainer";
 import { VerticalDirection } from "../../Core/Style/VerticalDirection";
 import { Defaults } from "../../Core/Sheet/Tablature/Defaults";
 import { DocumentRowElement } from "./DocumentRowElement";
-import { Vector } from "../Vector";
 import { Rect } from "../Rect";
+import { select } from "../../Core/Utilities/LinqLite";
 
 export class Bar extends DocumentRowElement {
 
@@ -27,8 +23,8 @@ export class Bar extends DocumentRowElement {
     }
 
     private initializeComponents() {
-        this.columns.push(... this.bar.columns.map(c => new BarColumn(this, c)));
-        this.voices.push(...[this.bar.bassVoice, this.bar.trebleVoice].map(v => new Voice(this, v)));
+        this.columns.push(...select(this.bar.columns, c => new BarColumn(this, c)));
+        this.voices.push(...select([this.bar.bassVoice, this.bar.trebleVoice], v => new Voice(this, v)));
     }
 
     protected measureOverride(availableSize: Size): Size {

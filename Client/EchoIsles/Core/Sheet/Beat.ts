@@ -73,8 +73,8 @@ export class Beat extends Element {
      * Get the beat which defines the nodes for this beat. As in, if this beat is tied,
      * the tie head will be the notes definer
      */
-    get notesDefiner(): Beat | undefined {
-        return this.isTied ? this.tieHead : this;
+    get notesDefiner(): Beat {
+        return this.isTied ? this.tieHead! : this;
     }
 
     get duration(): PreciseDuration {

@@ -1,4 +1,5 @@
 ﻿import { Pitch } from "../Pitch";
+import { all } from "../../Utilities/LinqLite";
 
 export class Tuning {
     readonly name?: string;
@@ -10,11 +11,11 @@ export class Tuning {
     }
 
     equals(other: Tuning): boolean {
-        return other && this.stringTunings.every((p, i) => other.stringTunings[i].equals(p));
+        return other && all(this.stringTunings, (p, i) => other.stringTunings[i].equals(p));
     }
 
     inOctaveEquals(other: Tuning): boolean {
-        return other && this.stringTunings.every((p, i) => other.stringTunings[i].noteName.equals(p.noteName));
+        return other && all(this.stringTunings, (p, i) => other.stringTunings[i].noteName.equals(p.noteName));
     }
 }
 

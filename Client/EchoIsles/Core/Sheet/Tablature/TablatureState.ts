@@ -4,6 +4,7 @@ import { Capo } from "./Capo";
 import { ChordDefinition } from "./ChordDefinition";
 import { TuningSignature } from "../TuningSignature";
 import { RhythmTemplate } from "../RhythmTemplate";
+import { min } from "../../Utilities/LinqLite";
 
 export class TablatureState extends DocumentState {
 
@@ -23,7 +24,7 @@ export class TablatureState extends DocumentState {
     set capoFretOffsets(value: number[]) {
         this.checkSealed();
         this._capoFretOffsets = value;
-        this._minimumCapoFret = value.reduce((min, v) => Math.min(min, v), Number.MAX_VALUE);
+        this._minimumCapoFret = min(value);
     }
 
     get minimumCapoFret(): number {
@@ -43,7 +44,7 @@ export class TablatureState extends DocumentState {
         return this._rhythmTemplate;
     }
 
-    set rhythmTemplate(value: RhythmTemplate ) {
+    set rhythmTemplate(value: RhythmTemplate) {
         this.checkSealed();
         this._rhythmTemplate = value;
     }
@@ -62,7 +63,7 @@ export class TablatureState extends DocumentState {
         super.cloneProperties(state);
         const tablatureState = state as TablatureState;
         tablatureState.capos.appendClone(this.capos);
-        tablatureState._capoFretOffsets = this._capoFretOffsets.map(f => f);
+        tablatureState._capoFretOffsets = [...this._capoFretOffsets];
         tablatureState._minimumCapoFret = this._minimumCapoFret;
         tablatureState.definedChords.appendClone(this.definedChords);
         tablatureState._tuningSignature = this._tuningSignature;

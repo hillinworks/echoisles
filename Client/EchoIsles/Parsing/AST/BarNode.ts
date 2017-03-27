@@ -20,6 +20,7 @@ import { Scanner } from "../Scanner";
 import { IParseResult, ParseHelper } from "../ParseResult";
 import { LiteralParsers } from "../LiteralParsers";
 import { TextRange } from "../../Core/Parsing/TextRange";
+import { all, any } from "../../Core/Utilities/LinqLite";
 
 function applyRhythmTemplate(template: RhythmTemplate, rhythm: Rhythm, logger: ILogger): Rhythm {
 
@@ -33,7 +34,7 @@ function applyRhythmTemplate(template: RhythmTemplate, rhythm: Rhythm, logger: I
         return rhythm;
     }
 
-    if (rhythm.segments.some(s => s.firstVoice !== undefined)) { // rhythm already defined
+    if (any(rhythm.segments, s => s.firstVoice !== undefined)) { // rhythm already defined
         return rhythm;
     }
 
@@ -148,7 +149,7 @@ export class BarNode extends TopLevelNode {
 
     private validateColumn(context: DocumentContext, logger: ILogger, column: BarColumn): boolean {
         if (column.voiceBeats.length === 2
-            && column.voiceBeats.every(b => b.strumTechnique !== StrumTechnique.None)) {
+            && all(column.voiceBeats, b => b.strumTechnique !== StrumTechnique.None)) {
 
             if (column.voiceBeats[0].strumTechnique !== column.voiceBeats[1].strumTechnique) {
                 logger.report(LogLevel.Warning,

@@ -47,14 +47,6 @@ export class SealableCollection<T> {
         this._isSealed = true;
     }
 
-    any(predicate: (e: T) => boolean): boolean {
-        return this.storage.some(predicate);
-    }
-
-    all(predicate: (e: T) => boolean): boolean {
-        return this.storage.every(predicate);
-    }
-
     clone(forceShallow = false): SealableCollection<T> {
         const clone = new SealableCollection<T>();
 

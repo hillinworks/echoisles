@@ -13,6 +13,7 @@ import { LiteralNode } from "../LiteralNode";
 import { Defaults } from "../../../Core/Sheet/Tablature/Defaults";
 import { LeftHandFingerIndex } from "../../../Core/Player/LeftHandFingerIndex";
 import { ExistencyNode } from "../ExistencyNode";
+import {L} from "../../../Core/Utilities/LinqLite";
 
 export class ChordFingeringNode extends Node {
     readonly fingerings = new Array<ChordFingeringNoteNode>();
@@ -46,7 +47,7 @@ export class ChordFingeringNode extends Node {
 
         const element = new ChordFingering();
         element.range = this.range;
-        element.notes = this.fingerings.map(f => f.toDocumentElement(ignoreFingerIndices));
+        element.notes = L(this.fingerings).select(f => f.toDocumentElement(ignoreFingerIndices)).toArray();
 
         return element;
     }

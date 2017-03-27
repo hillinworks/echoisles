@@ -12,6 +12,7 @@ import { Scanner } from "../Scanner";
 import { IParseResult, ParseHelper } from "../ParseResult";
 import { TextRange } from "../../Core/Parsing/TextRange";
 import { GuitarTunings } from "../../Core/MusicTheory/String/Plucked/GuitarTunings";
+import { select } from "../../Core/Utilities/LinqLite";
 
 export class TuningDirectiveNode extends DirectiveNode {
     name: LiteralNode<string>;
@@ -42,7 +43,7 @@ export class TuningDirectiveNode extends DirectiveNode {
     private toDocumentElement(context: DocumentContext, logger: ILogger): TuningSignature | undefined {
         const element = new TuningSignature();
         element.range = this.range;
-        element.tuning = new Tuning(LiteralNode.valueOrUndefined(this.name), ...this.stringTunings.map(t => t.toPitch()));
+        element.tuning = new Tuning(LiteralNode.valueOrUndefined(this.name), ...select(this.stringTunings, t => t.toPitch()));
 
         return element;
     }

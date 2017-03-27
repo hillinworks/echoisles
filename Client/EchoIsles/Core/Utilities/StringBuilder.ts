@@ -1,9 +1,11 @@
-﻿export class StringBuilder {
+﻿import { sum } from "./LinqLite";
+
+export class StringBuilder {
 
     private readonly data = new Array<string>();
 
     get length(): number {
-        return this.data.reduce((length, d) => length += d.length, 0);
+        return sum(this.data, d => d.length);
     }
 
     get hasContent(): boolean {

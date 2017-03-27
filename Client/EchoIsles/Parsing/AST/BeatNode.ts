@@ -20,6 +20,7 @@ import { Scanner } from "../Scanner";
 import { IParseResult, ParseHelper, ParseResultType } from "../ParseResult";
 import { LiteralParsers } from "../LiteralParsers";
 import { TextRange } from "../../Core/Parsing/TextRange";
+import { all } from "../../Core/Utilities/LinqLite";
 
 export class BeatNode extends Node {
     noteValue: NoteValueNode;
@@ -350,7 +351,7 @@ export module BeatNode {
         }
 
         // all notes are tied, which is equal to the beat being tied
-        isTied = isTied || node.notes.every(n => !!n.tie);
+        isTied = isTied || all(node.notes, n => !!n.tie);
 
         const noteValueIndetermined = !noteValue.value;
 

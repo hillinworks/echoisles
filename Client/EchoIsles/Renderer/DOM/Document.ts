@@ -7,6 +7,7 @@ import { Size } from "../Size";
 import { Rect } from "../Rect";
 import { Vector } from "../Vector";
 import { IWidgetRoot } from "../WidgetRoot";
+import { select } from "../../Core/Utilities/LinqLite";
 
 export class Document extends WidgetBase implements IWidgetRoot {
 
@@ -29,7 +30,7 @@ export class Document extends WidgetBase implements IWidgetRoot {
     }
 
     private initializeComponents(): void {
-        this.bars.push(...this.document.bars.map(this.createBar));
+        this.bars.push(...select(this.document.bars, this.createBar));
     }
 
     protected measureOverride(availableSize: Size): Size {

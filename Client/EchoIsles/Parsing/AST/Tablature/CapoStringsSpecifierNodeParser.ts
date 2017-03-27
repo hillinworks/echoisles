@@ -7,6 +7,7 @@ import { CapoRangeStringsSpecifierNode } from "./CapoRangeStringsSpecifierNode";
 import { LiteralNode } from "../LiteralNode";
 import { CapoDiscreteStringsSpecifierNode } from "./CapoDiscreteStringsSpecifierNode";
 import { CapoStringsSpecifierNode } from "./CapoStringsSpecifierNode";
+import { any } from "../../../Core/Utilities/LinqLite";
 
 export module CapoStringsSpecifierNodeParser {
     export function parse(scanner: Scanner): IParseResult<CapoStringsSpecifierNode> {
@@ -56,7 +57,7 @@ export module CapoStringsSpecifierNodeParser {
                         Messages.Error_CapoStringsSpecifierInvalidStringNumber);
                 }
 
-                if (discreteNode.strings.some(s => s.value === stringNumber)) {
+                if (any(discreteNode.strings, s => s.value === stringNumber)) {
                     helper.warning(scanner.lastReadRange, Messages.Warning_RedundantCapoStringSpecifier, stringNumber);
                 } else {
                     discreteNode.strings.push(LiteralNode.create(stringNumber, scanner.lastReadRange));
