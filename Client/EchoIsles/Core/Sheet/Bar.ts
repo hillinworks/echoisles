@@ -5,7 +5,7 @@ import { Lyrics } from "./Lyrics";
 import { DocumentState } from "./DocumentState";
 import { Voice } from "./Voice";
 import { PreciseDuration } from "../MusicTheory/PreciseDuration";
-import { BarColumn } from "./BarColumn";
+DocumentRow.Child
 import { AlternativeEndingPosition } from "./AlternativeEndingPosition";
 import { VoicePart } from "./VoicePart";
 import { IBeatElementContainer } from "./IBeatElementContainer";

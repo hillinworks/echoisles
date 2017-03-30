@@ -1,8 +1,9 @@
 ﻿import { Element } from "../Element";
 import { ChordFingeringNote } from "./ChordFingeringNote";
 import { L } from "../../Utilities/LinqLite";
+import { IChordFingering } from "./IChordFingering";
 
-export class ChordFingering extends Element {
+export class ChordFingering extends Element implements IChordFingering {
     notes: ChordFingeringNote[];
 
     clone(): ChordFingering {

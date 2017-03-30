@@ -2,6 +2,6 @@
 
 export interface IChordFingeringNote {
     readonly fret: number;
-    readonly fingerIndex: LeftHandFingerIndex;
+    readonly fingerIndex?: LeftHandFingerIndex;
     readonly isImportant: boolean;
 }

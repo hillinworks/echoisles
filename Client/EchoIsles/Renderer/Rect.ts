@@ -55,6 +55,8 @@ export class Rect {
 
 export module Rect {
 
+    export const zero = new Rect(0, 0, 0, 0);
+
     export function create(topLeft: Point, size = Size.zero): Rect {
         return new Rect(topLeft.x, topLeft.y, size.width, size.height);
     }

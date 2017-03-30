@@ -7,7 +7,7 @@ import { NoteRepetition } from "../MusicTheory/NoteRepetition";
 import { HoldAndPause } from "../MusicTheory/HoldAndPause";
 import { BeatAccent } from "../MusicTheory/BeatAccent";
 import { PreciseDuration } from "../MusicTheory/PreciseDuration";
-import { BarColumn } from "./BarColumn";
+DocumentRow.Child
 import { Beam } from "./Beam";
 import { IBeatElementContainer } from "./IBeatElementContainer";
 import { Bar } from "./Bar";

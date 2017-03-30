@@ -1,17 +1,19 @@
 ﻿import { WidgetBase } from "../WidgetBase";
 import { Bar as CoreBar } from "../../Core/Sheet/Bar";
-import { BarColumn } from "./BarColumn";
 import { Voice } from "./Voice";
 import { Size } from "../Size";
 import { VoicePart } from "../../Core/Sheet/VoicePart";
 import { Style } from "../Style";
 import { VerticalDirection } from "../../Core/Style/VerticalDirection";
 import { Defaults } from "../../Core/Sheet/Tablature/Defaults";
-import { DocumentRowElement } from "./DocumentRowElement";
 import { Rect } from "../Rect";
 import { select } from "../../Core/Utilities/LinqLite";
+import { Point } from "../Point";
+import { DocumentRow } from "./DocumentRow";
+import { BarColumn } from "./BarColumn";
 
-export class Bar extends DocumentRowElement {
+
+export class Bar extends DocumentRow.Child {
 
     readonly columns = new Array<BarColumn>();
     private readonly columnSpacings = new Array<number>();
@@ -20,6 +22,10 @@ export class Bar extends DocumentRowElement {
     constructor(owner: WidgetBase, public readonly bar: CoreBar) {
         super(owner);
         this.initializeComponents();
+    }
+
+    get bodyHeight(): number {
+        return Style.current.bar.lineHeight * (Defaults.strings - 1);
     }
 
     private initializeComponents() {
@@ -45,7 +51,7 @@ export class Bar extends DocumentRowElement {
 
             const firstColumn = this.columns[0];
             firstColumn.relativePosition = 0;
-            let x = firstColumn.compactDesiredWidth;
+            let x = firstColumn.relativeNoteElementsBounds.width;
             let lastLyricsStop = firstColumn.lyricsSegment ? firstColumn.lyricsSegment.desiredSize.width : 0;
             let lastChordStop = firstColumn.chordDiagram ? firstColumn.chordDiagram.desiredSize.width : 0;
 
@@ -93,9 +99,7 @@ export class Bar extends DocumentRowElement {
         this.setDesiredCeilingSize(desiredCeilingSize);
         this.setDesiredFloorSize(desiredFloorSize);
 
-        const desiredHeight = barStyle.lineHeight * (Defaults.strings - 1)
-            + this.desiredCeilingSize
-            + this.desiredFloorSize;
+        const desiredHeight = this.bodyHeight + this.desiredCeilingSize + this.desiredFloorSize;
 
         return new Size(desiredWidth, desiredHeight);
     }
@@ -117,7 +121,11 @@ export class Bar extends DocumentRowElement {
         }
 
         for (let voice of this.voices) {
-            voice.arrange(Rect.create(this.position, finalSize));
+            const position = VerticalDirection.select(VoicePart.getEpitaxyPosition(voice.voice.voicePart),
+                () => this.position.translate(new Point(0, -voice.desiredEpitaxySize)),
+                () => this.position.translate(new Point(0, this.bodyHeight)));
+
+            voice.arrange(Rect.create(position, finalSize));
         }
 
         return finalSize;
@@ -127,5 +135,19 @@ export class Bar extends DocumentRowElement {
         this.columns.forEach(c => c.destroy());
         this.columnSpacings.length = this.columns.length - 1;
         this.voices.forEach(v => v.destroy());
+    }
+}
+
+export module Bar {
+    export abstract class Child extends WidgetBase implements IDescendant {
+
+        protected constructor(readonly ownerBar: Bar) {
+            super(ownerBar);
+        }
+
+    }
+
+    export interface IDescendant {
+        readonly ownerBar: Bar;
     }
 }

@@ -1,7 +1,8 @@
 ﻿import { Element } from "../Element";
 import { ChordFingering } from "./ChordFingering";
+import { IChordDefinition } from "./IChordDefinition";
 
-export class ChordDefinition extends Element {
+export class ChordDefinition extends Element implements IChordDefinition {
     name: string;
     private _displayName: string;
     fingering: ChordFingering;

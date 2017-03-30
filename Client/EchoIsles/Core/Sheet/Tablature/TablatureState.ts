@@ -4,13 +4,18 @@ import { Capo } from "./Capo";
 import { ChordDefinition } from "./ChordDefinition";
 import { TuningSignature } from "../TuningSignature";
 import { RhythmTemplate } from "../RhythmTemplate";
-import { min } from "../../Utilities/LinqLite";
+import { min, firstOrUndefined } from "../../Utilities/LinqLite";
+import { ChordLibrary } from "./ChordLibrary";
+import {IChordDefinition} from "./IChordDefinition";
+import {Chord} from "./Chord";
+import {InlineChordDefinition} from "./InlineChordDefinition";
 
 export class TablatureState extends DocumentState {
 
     readonly capos = new SealableCollection<Capo>();
     private _capoFretOffsets: number[];
     private _minimumCapoFret: number;
+    private chordLibrary?: ChordLibrary;
 
     readonly definedChords = new SealableCollection<ChordDefinition>();
 
@@ -49,6 +54,32 @@ export class TablatureState extends DocumentState {
         this._rhythmTemplate = value;
     }
 
+    loadChordLibrary(chordLibrary: ChordLibrary) {
+        this.chordLibrary = chordLibrary;
+    }
+
+    resolveChord(chord: Chord): IChordDefinition | undefined {
+        if (chord.fingering) {
+            return new InlineChordDefinition(chord);
+        }
+
+        if (!chord.name) {
+            return undefined;
+        }
+
+        const upperChordName = chord.name.toUpperCase();
+        const definition = firstOrUndefined(this.definedChords, c => c.name.toUpperCase() === upperChordName);
+        if (definition) {
+            return definition;
+        }
+
+        if (this.chordLibrary) {
+            return this.chordLibrary.resolve(chord.name);
+        }
+
+        return undefined;
+    }
+
     getCapoFretOffset(string: number): number {
         return this._capoFretOffsets === undefined ? 0 : this._capoFretOffsets[string];
     }
@@ -68,5 +99,6 @@ export class TablatureState extends DocumentState {
         tablatureState.definedChords.appendClone(this.definedChords);
         tablatureState._tuningSignature = this._tuningSignature;
         tablatureState._rhythmTemplate = this._rhythmTemplate;
+        tablatureState.chordLibrary = this.chordLibrary;
     }
 }

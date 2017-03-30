@@ -1,17 +1,11 @@
 ﻿import { Element } from "../Element";
 import { LeftHandFingerIndex } from "../../Player/LeftHandFingerIndex";
+import { IChordFingeringNote } from "./IChordFingeringNote";
 
+export class ChordFingeringNote extends Element implements IChordFingeringNote {
 
-export class ChordFingeringNote extends Element {
-    fret: number;
-    fingerIndex?: LeftHandFingerIndex;
-    isImportant: boolean;
-
-    constructor(fret: number, fingerIndex?: LeftHandFingerIndex, isImportant = false) {
+    constructor(public fret: number, public fingerIndex?: LeftHandFingerIndex, public isImportant = false) {
         super();
-        this.fret = fret;
-        this.fingerIndex = fingerIndex;
-        this.isImportant = isImportant;
     }
 
     clone(): ChordFingeringNote {

@@ -1,4 +1,5 @@
-﻿import { WidgetBase } from "../WidgetBase";
+﻿import * as fabric from "fabric";
+import { WidgetBase } from "../WidgetBase";
 import { DocumentRow } from "./DocumentRow";
 import { Document as CoreDocument } from "../../Core/Sheet/Document";
 import { Bar } from "./Bar";

@@ -601,6 +601,7 @@ export function lastOrUndefined<T>(source: Iterable<T> | T[], predicate: Predica
     return last;
 }
 
+
 /**
  * Invokes a transform function on each element of a sequence and returns the maximum number value.
  * @param source A sequence of values to determine the maximum value of.
@@ -615,6 +616,7 @@ export function max<T>(source: Iterable<T>, selector: Selector<T, number> = defa
 
     return max;
 }
+
 
 /**
  * Invokes a transform function on each element of a sequence and returns the minimum number value.
@@ -996,6 +998,16 @@ export function toArray<T>(source: Iterable<T>): T[] {
  */
 export function toLookup<T, TElement>(source: Iterable<T>,
     keySelector: Selector<T, string>,
+    valueSelector: Selector<T, TElement>): StringKeyMap<Iterable<TElement>>;
+/**
+ * Creates a lookup from an Iterable<T> according to specified key selector function.
+ * @param source The Iterable<T> to create a lookup from.
+ * @param keySelector A function to extract a key from each element.
+ * @return A lookup that contains values of type TElement selected from the input sequence.
+ */
+export function toLookup<T>(source: Iterable<T>, keySelector: Selector<T, string>): StringKeyMap<Iterable<T>>;
+export function toLookup<T, TElement>(source: Iterable<T>,
+    keySelector: Selector<T, string>,
     valueSelector: Selector<T, TElement> = defaultSelector): StringKeyMap<Iterable<TElement>> {
     const object: StringKeyMap<TElement[]> = {};
     for (let item of source) {
@@ -1011,6 +1023,7 @@ export function toLookup<T, TElement>(source: Iterable<T>,
     return object;
 }
 
+
 /**
  * Creates a map object from a sequence according to specified key selector and element selector functions.
  * @param source An Iterable<T> to create a map object from.
@@ -1018,6 +1031,16 @@ export function toLookup<T, TElement>(source: Iterable<T>,
  * @param valueSelector A transform function to produce a result element value from each element.
  * @return A map object that contains values of type TElement selected from the input sequence.
  */
+export function toMap<T, TElement>(source: Iterable<T>,
+    keySelector: Selector<T, string>,
+    valueSelector: Selector<T, TElement>): StringKeyMap<TElement>;
+/**
+ * Creates a map object from a sequence according to specified key selector function.
+ * @param source An Iterable<T> to create a map object from.
+ * @param keySelector A function to extract a string key from each element.
+ * @return A map object that contains values of type TElement selected from the input sequence.
+ */
+export function toMap<T>(source: Iterable<T>, keySelector: Selector<T, string>): StringKeyMap<T>;
 export function toMap<T, TElement>(source: Iterable<T>,
     keySelector: Selector<T, string>,
     valueSelector: Selector<T, TElement> = defaultSelector): StringKeyMap<TElement> {
@@ -1032,6 +1055,7 @@ export function toMap<T, TElement>(source: Iterable<T>,
 
     return object;
 }
+
 
 /**
  * Returns undefined in a singleton collection if the sequence is empty.
@@ -1103,6 +1127,51 @@ export function* unionHash<T>(first: Iterable<T>, second: Iterable<T>, hash: Has
             yield item;
         }
     }
+}
+
+
+/**
+ * Returns the elements of the sequence that has the maximum value calculated by the specified selector.
+ * @param source An Iterable<T> to find element from.
+ * @param selector A transform function to apply to each element.
+ * @return an array of elements from the input sequence that has the maximum value calculated by the specified selector.
+ */
+export function withMax<T>(source: Iterable<T>, selector: Selector<T, number>): T[] {
+    let max = Number.MIN_VALUE;
+    let elements = new Array<T>();
+    for (let item of source) {
+        const value = selector(item);
+        if (max < value) {
+            max = value;
+            elements = [item];
+        } else if (max === value) {
+            elements.push(item);
+        }
+    }
+
+    return elements;
+}
+
+/**
+ * Returns the elements of the sequence that has the minimum value calculated by the specified selector.
+ * @param source An Iterable<T> to find element from.
+ * @param selector A transform function to apply to each element.
+ * @return an array of elements from the input sequence that has the minimum value calculated by the specified selector.
+ */
+export function withMin<T>(source: Iterable<T>, selector: Selector<T, number>): T[] {
+    let min = Number.MAX_VALUE;
+    let elements = new Array<T>();
+    for (let item of source) {
+        const value = selector(item);
+        if (min > value) {
+            min = value;
+            elements = [item];
+        } else if (min === value) {
+            elements.push(item);
+        }
+    }
+
+    return elements;
 }
 
 /**
@@ -1281,7 +1350,7 @@ export interface ISequence<T> extends Iterable<T> {
      * Iterate through this sequence and perform the specified action on each element.
      * @param action the action to apply to each element.
      */
-    foreach(action: (element: T) => void): void;
+    foreach(action: (element: T, index: number) => void): void;
 
     /**
      * Groups the elements of this sequence according to a specified key selector function and projects the elements for each group by using a specified function.
@@ -1492,14 +1561,26 @@ export interface ISequence<T> extends Iterable<T> {
     toArray(): T[];
 
     /**
+     * Creates a lookup from this sequence according to specified key selector function.
+     * @param keySelector A function to extract a key from each element.
+     * @return A lookup that contains values of type TElement selected from this sequence.
+     */
+    toLookup(keySelector: Selector<T, string>): StringKeyMap<ISequence<T>>;
+    /**
      * Creates a lookup from this sequence according to specified key selector and element selector functions.
      * @param keySelector A function to extract a key from each element.
      * @param valueSelector A transform function to produce a result element value from each element.
      * @return A lookup that contains values of type TElement selected from this sequence.
      */
     toLookup<TElement>(keySelector: Selector<T, string>,
-        valueSelector?: Selector<T, TElement>): StringKeyMap<ISequence<TElement>>;
+        valueSelector: Selector<T, TElement>): StringKeyMap<ISequence<TElement>>;
 
+    /**
+     * Creates a map object from this sequence according to specified key selector function.
+     * @param keySelector A function to extract a string key from each element.
+     * @return A map object that contains values of type TElement selected from this sequence.
+     */
+    toMap(keySelector: Selector<T, string>): StringKeyMap<T>;
     /**
      * Creates a map object from this sequence according to specified key selector and element selector functions.
      * @param keySelector A function to extract a string key from each element.
@@ -1507,7 +1588,7 @@ export interface ISequence<T> extends Iterable<T> {
      * @return A map object that contains values of type TElement selected from this sequence.
      */
     toMap<TElement>(keySelector: Selector<T, string>,
-        valueSelector?: Selector<T, TElement>): StringKeyMap<TElement>;
+        valueSelector: Selector<T, TElement>): StringKeyMap<TElement>;
 
     /**
      * Returns undefined in a singleton collection if this sequence is empty.
@@ -1529,6 +1610,21 @@ export interface ISequence<T> extends Iterable<T> {
      * @return An Iterable<T> that contains the elements from both input sequences, excluding duplicates.
      */
     unionHash(other: Iterable<T>, hash?: Hash<T>): ISequence<T>;
+
+    /**
+     * Returns the elements of this sequence that has the maximum value calculated by the specified selector.
+     * @param selector A transform function to apply to each element.
+     * @return an array of elements from this sequence that has the maximum value calculated by the specified selector.
+     */
+    withMax(selector: Selector<T, number>): ISequence<T>;
+
+    /**
+     * Returns the elements of this sequence that has the minimum value calculated by the specified selector.
+     * @param selector A transform function to apply to each element.
+     * @return an array of elements from this sequence that has the minimum value calculated by the specified selector.
+     */
+    withMin(selector: Selector<T, number>): ISequence<T>;
+
     /**
      * Filters this sequence of values based on a predicate.
      * @param predicate A function to test each source element for a condition; the second parameter of the function represents the index of the source element.
@@ -1634,9 +1730,11 @@ class Sequence<T> implements ISequence<T> {
         return firstOrUndefined(this.iterable, predicate);
     }
 
-    foreach(action: (element: T) => void): void {
+    foreach(action: (element: T, index: number) => void): void {
+        let index = 0;
         for (let item of this.iterable) {
-            action(item);
+            action(item, index);
+            ++index;
         }
     }
 
@@ -1777,8 +1875,11 @@ class Sequence<T> implements ISequence<T> {
     }
 
     toLookup<TElement>(keySelector: Selector<T, string>,
+        valueSelector: Selector<T, TElement>): StringKeyMap<ISequence<TElement>>;
+    toLookup(keySelector: Selector<T, string>): StringKeyMap<ISequence<T>>;
+    toLookup<TElement>(keySelector: Selector<T, string>,
         valueSelector: Selector<T, TElement> = defaultSelector): StringKeyMap<ISequence<TElement>> {
-        const rawLookup = toLookup(this.iterable, keySelector, valueSelector);
+        const rawLookup = toLookup<T, TElement>(this.iterable, keySelector, valueSelector);
         const lookup: StringKeyMap<ISequence<TElement>> = {};
         for (let key in rawLookup) {
             if (rawLookup.hasOwnProperty(key)) {
@@ -1788,7 +1889,9 @@ class Sequence<T> implements ISequence<T> {
 
         return lookup;
     }
-
+    toMap<TElement>(keySelector: Selector<T, string>,
+        valueSelector: Selector<T, TElement>): StringKeyMap<TElement>;
+    toMap(keySelector: Selector<T, string>): StringKeyMap<T>;
     toMap<TElement>(keySelector: Selector<T, string>,
         valueSelector: Selector<T, TElement> = defaultSelector): StringKeyMap<TElement> {
         return toMap(this.iterable, keySelector, valueSelector);
@@ -1804,6 +1907,14 @@ class Sequence<T> implements ISequence<T> {
 
     unionHash(other: Iterable<T>, hash: Hash<T> = defaultHash): ISequence<T> {
         return new Sequence<T>(unionHash(this.iterable, other, hash));
+    }
+
+    withMin(selector: Selector<T, number>): ISequence<T> {
+        return new Sequence<T>(withMin(this.iterable, selector));
+    }
+
+    withMax(selector: Selector<T, number>): ISequence<T> {
+        return new Sequence<T>(withMax(this.iterable, selector));
     }
 
     where(predicate: IndexedPredicate<T>): ISequence<T> {

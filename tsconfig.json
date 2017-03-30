@@ -29,7 +29,8 @@
       "node",
       "source-map",
       "uglify-js",
-      "webpack"
+      "webpack",
+      "fabric"
     ]
   },
   "exclude": [

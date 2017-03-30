@@ -6,7 +6,7 @@ import { BarLine } from "./BarLine";
 import { BarLine as CoreBarLine } from "../../Core/MusicTheory/BarLine";
 import { Style } from "../Style";
 import { Defaults } from "../../Core/Sheet/Tablature/Defaults";
-import { DocumentRowElement } from "./DocumentRowElement";
+
 
 export class DocumentRow extends WidgetBase {
 
@@ -56,7 +56,7 @@ export class DocumentRow extends WidgetBase {
         this.invalidateLayout();
     }
 
-    private *getLayoutChildren(): IterableIterator<DocumentRowElement> {
+    private *getLayoutChildren(): IterableIterator<DocumentRow.Child> {
         for (let i = 0; i < this.barLines.length; ++i) {
             yield this.barLines[i];
 
@@ -126,4 +126,33 @@ export class DocumentRow extends WidgetBase {
     destroy(): void {
         this.barLines.forEach(l => l.destroy());
     }
+}
+
+export module DocumentRow {
+
+    export class Child extends WidgetBase {
+
+        private _desiredCeilingSize: number;
+        private _desiredFloorSize: number;
+
+        /** the relative y position of the first (upper-most) bar line */
+        baseline: number;
+
+        get desiredCeilingSize(): number {
+            return this._desiredCeilingSize;
+        }
+
+        get desiredFloorSize(): number {
+            return this._desiredFloorSize;
+        }
+
+        protected setDesiredCeilingSize(value: number) {
+            this._desiredCeilingSize = value;
+        }
+
+        protected setDesiredFloorSize(value: number) {
+            this._desiredFloorSize = value;
+        }
+    }
+
 }

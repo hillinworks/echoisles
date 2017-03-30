@@ -49,7 +49,7 @@ export class Beam extends VirtualElement implements IInternalBeatElement, IBeatE
     get duration(): PreciseDuration {
         return PreciseDuration.sum(this.elements, e => e.duration);
     }
-
+    
     clearRange(): void {
         this.elements.forEach(e => e.clearRange());
     }

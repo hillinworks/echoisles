@@ -8,8 +8,8 @@ import { Chord } from "./Tablature/Chord";
 
 export class BarColumn extends VirtualElement implements IBarElement {
     readonly voiceBeats = new Array<Beat>();
-    chord: Chord;
-    lyrics: LyricsSegment;
+    chord?: Chord;
+    lyrics?: LyricsSegment;
     isFirstOfSegment: boolean;
     
     constructor(readonly ownerBar: Bar, readonly index: number, readonly position: PreciseDuration) {

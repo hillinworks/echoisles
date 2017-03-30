@@ -1,5 +1,4 @@
-﻿import * as fabric from "fabric";
-import { Size } from "./Size";
+﻿import { Size } from "./Size";
 import { Point } from "./Point";
 import { Rect } from "./Rect";
 import { IWidgetRoot } from "./WidgetRoot";
