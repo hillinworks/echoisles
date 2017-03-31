@@ -6,12 +6,16 @@ import { BarLine } from "./BarLine";
 import { BarLine as CoreBarLine } from "../../Core/MusicTheory/BarLine";
 import { Style } from "../Style";
 import { Defaults } from "../../Core/Sheet/Tablature/Defaults";
-
+import { HeightMap } from "./HeightMap";
+import { VoicePart } from "../../Core/Sheet/VoicePart";
+import { Point } from "../Point";
+const heightMapSampleRate = 1;
 
 export class DocumentRow extends WidgetBase {
 
     private readonly bars = new Array<Bar>();
     private readonly barLines = new Array<BarLine>();
+    private readonly heightMaps = new Array<HeightMap>(2);
     private _desiredCeilingSize: number;
     private _desiredFloorSize: number;
 
@@ -66,16 +70,34 @@ export class DocumentRow extends WidgetBase {
         }
     }
 
+    getHeightMap(voicePart: VoicePart): HeightMap {
+        return this.heightMaps[voicePart];
+    }
+
+    private initializeHeightMaps(width: number) {
+        for (let i = 0; i < this.heightMaps.length; ++i) {
+            this.heightMaps[i] = new HeightMap(Math.ceil(width), heightMapSampleRate, 0);
+        }
+    }
+
     protected measureOverride(availableSize: Size): Size {
+
+        this.initializeHeightMaps(availableSize.width);
+
         let desiredWidth = 0;
         this._desiredCeilingSize = 0;
         this._desiredFloorSize = 0;
 
         for (let child of this.getLayoutChildren()) {
+            child.relativePosition = new Point(desiredWidth, 0);
             child.measure(new Size(availableSize.width - desiredWidth, availableSize.height));
             desiredWidth += child.desiredSize.width;
             this._desiredCeilingSize = Math.max(this._desiredCeilingSize, child.desiredCeilingSize);
             this._desiredFloorSize = Math.max(this._desiredFloorSize, child.desiredFloorSize);
+        }
+
+        for (let child of this.getLayoutChildren()) {
+            child.relativeBaseline = this._desiredCeilingSize;
         }
 
         const desiredHeight = Style.current.bar.lineHeight * (Defaults.strings - 1)
@@ -103,6 +125,9 @@ export class DocumentRow extends WidgetBase {
     }
 
     protected arrangeOverride(finalSize: Size): Size {
+
+        this.initializeHeightMaps(finalSize.width);
+
         const minimumBarWidth = this.calculateMinimumBarWidth(finalSize.width);
 
         let renderWidth = 0;
@@ -114,8 +139,9 @@ export class DocumentRow extends WidgetBase {
                 size = new Size(child.desiredSize.width, finalSize.height);
             }
 
-            child.baseline = this.desiredCeilingSize;
-            child.arrange(Rect.create(this.position, size));
+            child.relativePosition = new Point(renderWidth, 0);
+            child.relativeBaseline = this.desiredCeilingSize;
+            child.arrange(Rect.create(this.position.translate(child.relativePosition), size));
 
             renderWidth += child.renderSize.width;
         }
@@ -130,13 +156,24 @@ export class DocumentRow extends WidgetBase {
 
 export module DocumentRow {
 
-    export class Child extends WidgetBase {
+    export interface IDecendant {
+        readonly ownerRow: DocumentRow;
+    }
+
+    export class Child extends WidgetBase implements IDecendant {
 
         private _desiredCeilingSize: number;
         private _desiredFloorSize: number;
 
+        /** the position relative to owner row */
+        relativePosition: Point;
+
         /** the relative y position of the first (upper-most) bar line */
-        baseline: number;
+        relativeBaseline: number;
+
+        constructor(readonly ownerRow: DocumentRow) {
+            super(ownerRow);
+        }
 
         get desiredCeilingSize(): number {
             return this._desiredCeilingSize;
@@ -152,6 +189,13 @@ export module DocumentRow {
 
         protected setDesiredFloorSize(value: number) {
             this._desiredFloorSize = value;
+        }
+
+        /**
+         * convert a position relative to this widget to a position relative to the owner row
+         */
+        getPositionRelativeToOwnerRow(relativePosition: Point): Point {
+            return this.relativePosition.translate(relativePosition);
         }
     }
 

@@ -21,6 +21,7 @@ import { NoteBase } from "./NoteBase";
 import { Rest } from "./Rest";
 import { VoicePart } from "../../Core/Sheet/VoicePart";
 import { VerticalDirection } from "../../Core/Style/VerticalDirection";
+import { DocumentRow } from "./DocumentRow";
 
 export class BarColumn extends Bar.Child {
 
@@ -102,7 +103,7 @@ export class BarColumn extends Bar.Child {
             this.notes.push(
                 ...beatsSequence.where(b => b.isRest)
                     .select(b => {
-                        const string = VoicePart.getEpitaxyPosition(b.voicePart) === VerticalDirection.Above
+                        const string = VoicePart.getEpitaxyDirection(b.voicePart) === VerticalDirection.Above
                             ? 0
                             : Defaults.strings;
                         return new Rest(this, b, string);
@@ -328,6 +329,10 @@ export module BarColumn {
 
         get ownerBar(): Bar {
             return this.ownerBarColumn.ownerBar;
+        }
+
+        get ownerRow(): DocumentRow {
+            return this.ownerBar.ownerRow;
         }
     }
 

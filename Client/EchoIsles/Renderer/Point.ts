@@ -1,17 +1,18 @@
 ﻿import { Vector } from "./Vector";
+import { IVectorLike } from "./IVectorLike";
 
-export class Point {
+export class Point implements IVectorLike {
     constructor(public readonly x: number, public readonly y: number) { }
 
-    translate(vector: Vector): Point {
+    translate(vector: IVectorLike): Point {
         return new Point(this.x + vector.x, this.y + vector.y);
     }
 
-    substract(other: Point): Vector {
+    substract(other: IVectorLike): Vector {
         return new Vector(this.x - other.x, this.y - other.y);
     }
 
-    equals(other: Point): boolean {
+    equals(other: IVectorLike): boolean {
         return this.x === other.x && this.y === other.y;
     }
 
@@ -27,7 +28,7 @@ export class Point {
 export module Point {
     export const zero = new Point(0, 0);
 
-    export function average(points: Iterable<Point>): Point {
+    export function average(points: Iterable<IVectorLike>): Point {
         let sumX = 0, sumY = 0, count = 0;
         for (let point of points) {
             sumX += point.x;

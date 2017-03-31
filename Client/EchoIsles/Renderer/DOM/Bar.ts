@@ -19,8 +19,8 @@ export class Bar extends DocumentRow.Child {
     private readonly columnSpacings = new Array<number>();
     private readonly voices = new Array<Voice>();
 
-    constructor(owner: WidgetBase, public readonly bar: CoreBar) {
-        super(owner);
+    constructor(parent: DocumentRow, public readonly bar: CoreBar) {
+        super(parent);
         this.initializeComponents();
     }
 
@@ -86,7 +86,7 @@ export class Bar extends DocumentRow.Child {
 
         for (let voice of this.voices) {
             voice.measure(availableSize);
-            switch (VoicePart.getEpitaxyPosition(voice.voice.voicePart)) {
+            switch (VoicePart.getEpitaxyDirection(voice.voice.voicePart)) {
                 case VerticalDirection.Above:
                     desiredCeilingSize = Math.max(desiredCeilingSize, voice.desiredEpitaxySize);
                     break;
@@ -115,13 +115,13 @@ export class Bar extends DocumentRow.Child {
 
         for (let column of this.columns) {
             column.arrange(new Rect(this.position.x + column.relativePosition * xScale,
-                this.position.y + this.baseline,
+                this.position.y + this.relativeBaseline,
                 column.desiredSize.width,
                 column.desiredSize.height));
         }
 
         for (let voice of this.voices) {
-            const position = VerticalDirection.select(VoicePart.getEpitaxyPosition(voice.voice.voicePart),
+            const position = VerticalDirection.select(VoicePart.getEpitaxyDirection(voice.voice.voicePart),
                 () => this.position.translate(new Point(0, -voice.desiredEpitaxySize)),
                 () => this.position.translate(new Point(0, this.bodyHeight)));
 
@@ -145,9 +145,13 @@ export module Bar {
             super(ownerBar);
         }
 
+        get ownerRow(): DocumentRow {
+            return this.ownerBar.ownerRow;
+        }
+
     }
 
-    export interface IDescendant {
+    export interface IDescendant extends DocumentRow.IDecendant {
         readonly ownerBar: Bar;
     }
 }

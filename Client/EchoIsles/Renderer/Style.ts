@@ -13,14 +13,17 @@
         },
 
         note: {
-            head : {
+            head: {
                 alternationOffsetWithHarmonics: 20,
                 alternationOffset: 12
             },
             stem: {
                 standardHeight: 24,
-                minimumEpitaxy: 16
-            }
+                minimumEpitaxy: 16,
+                horizontalMargin: 10,
+                thickness: 1
+            },
+            tremoloOffset: 12
         },
 
         beam: {

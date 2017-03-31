@@ -7,7 +7,7 @@ export enum VoicePart {
 
 export module VoicePart {
 
-    export function getEpitaxyPosition(voicePart: VoicePart): VerticalDirection {
+    export function getEpitaxyDirection(voicePart: VoicePart): VerticalDirection {
         switch (voicePart) {
             case VoicePart.Treble:
                 return VerticalDirection.Above;

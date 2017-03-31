@@ -9,11 +9,12 @@ import { Voice } from "./Voice";
 import { Bar } from "./Bar";
 import { BeamSlope } from "./BeamSlope";
 import { Size } from "../Size";
+import { DocumentRow } from "./DocumentRow";
 
 export abstract class BeatWidgetBase extends WidgetBase implements Voice.IDescendant {
 
     /** the root position relative to its owner bar */
-    protected protectedRelativeRootPosition: Point;
+    protected protectedRootPosition: Point;
 
     slope?: BeamSlope;
 
@@ -25,6 +26,10 @@ export abstract class BeatWidgetBase extends WidgetBase implements Voice.IDescen
         return this.parent.ownerBar;
     }
 
+    get ownerRow(): DocumentRow {
+        return this.ownerBar.ownerRow;
+    }
+
     get ownerVoice(): Voice {
         if (this.parent instanceof Voice) {
             return this.parent;
@@ -33,8 +38,8 @@ export abstract class BeatWidgetBase extends WidgetBase implements Voice.IDescen
         }
     }
 
-    get relativeRootPosition(): Point {
-        return this.protectedRelativeRootPosition;
+    get rootPosition(): Point {
+        return this.protectedRootPosition;
     }
 
     abstract get desiredEpitaxySize(): Size;

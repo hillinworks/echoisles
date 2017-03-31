@@ -7,6 +7,7 @@ import { Size } from "../Size";
 import { Point } from "../Point";
 import { Rect } from "../Rect";
 import { BeamConnector } from "./BeamConnector";
+import { Style } from "../Style";
 
 function* getAllBeats(beam: Beam): Iterable<Beat> {
     for (let element of beam.elements) {
@@ -70,13 +71,14 @@ export class Beam extends BeatWidgetBase {
     protected measureOverride(availableSize: Size): Size {
         if (this.beam.isRoot) {
             this.updateSlope();
+            this.updateHeightMap();
         }
 
         let bounds = Rect.zero;
         for (let element of this.elements) {
             element.slope = this.slope;
             element.measure(availableSize);
-            bounds = bounds.union(Rect.create(element.relativeRootPosition, element.desiredSize));
+            bounds = bounds.union(Rect.create(element.rootPosition, element.desiredSize));
         }
 
         this._desiredEpitaxySize = new Size(
@@ -92,17 +94,21 @@ export class Beam extends BeatWidgetBase {
         let bounds = Rect.create(this.position);
         for (let element of this.elements) {
             element.slope = this.slope;
-            const x = this.ownerBar.position.x + element.relativeRootPosition.x;
-            const rootY = this.ownerBar.position.y + element.relativeRootPosition.y;
+
+            // note rootPosition is relative to owner bar
+            const x = this.ownerBar.position.x + element.rootPosition.x;
+            const rootY = this.ownerBar.position.y + element.rootPosition.y;
             const y = this.ownerVoice.selectEpitaxy(
                 above => rootY - element.desiredSize.height,
                 under => rootY);
-            const position = this.position.translate(new Point(x, y));
+            const position = new Point(x, y);
             element.arrange(Rect.create(position, element.desiredSize));
             bounds = bounds.union(Rect.create(element.position, element.renderSize));
         }
 
-        // todo: arrange connector
+        this.connector.setTerminals(this.ownerBar.position.translate(this.firstBeat.tipPosition),
+            this.ownerBar.position.translate(this.lastBeat.tipPosition));
+        this.connector.arrange(bounds);
 
         return bounds.size;
     }
@@ -115,15 +121,26 @@ export class Beam extends BeatWidgetBase {
             beat.measureBody();
 
             if (p0) {
-                const slope = (beat.relativeTipPosition.y - p0.y) / (beat.relativeTipPosition.x - p0.x);
-                maxSlope = Math.max(maxSlope, Math.abs(slope));
+                const slope = (beat.tipPosition.y - p0.y) / (beat.tipPosition.x - p0.x);
+                maxSlope = this.ownerVoice.epitaxyMax(maxSlope, Math.abs(slope));
             } else {
-                p0 = beat.relativeTipPosition;
+                p0 = beat.tipPosition;
                 maxSlope = 0;
             }
         }
 
         this.slope = new BeamSlope(p0!.x, p0!.y, maxSlope);
+    }
+
+    private updateHeightMap() {
+        const firstBeat = this.firstBeat;
+        const lastBeat = this.lastBeat;
+        this.ownerVoice.heightMap.ensureHeightSloped(
+            this.ownerBar.relativePosition.x + firstBeat.tipPosition.x,
+            lastBeat.tipPosition.x - firstBeat.tipPosition.x,
+            firstBeat.desiredEpitaxySize.height,
+            lastBeat.desiredEpitaxySize.height,
+            Style.current.note.stem.horizontalMargin);
     }
 
     destroy() {
