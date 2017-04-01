@@ -3,13 +3,15 @@ import { Voice } from "./Voice";
 import { Bar } from "./Bar";
 import { Point } from "../Point";
 import { DocumentRow } from "./DocumentRow";
+import { BaseNoteValue } from "../../Core/MusicTheory/BaseNoteValue";
 
-export class BeamConnector extends WidgetBase implements Voice.IDescendant {
+export class BeamConnector extends WidgetBase implements Bar.IBarRelated, Voice.IDescendant {
+    relativePosition: Point;
 
     private from: Point;
     private to: Point;
 
-    constructor(protected readonly parent: WidgetBase & Voice.IDescendant) {
+    constructor(readonly parent: WidgetBase & Voice.IDescendant, readonly noteValue: BaseNoteValue) {
         super(parent);
     }
 

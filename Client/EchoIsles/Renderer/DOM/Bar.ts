@@ -154,4 +154,8 @@ export module Bar {
     export interface IDescendant extends DocumentRow.IDecendant {
         readonly ownerBar: Bar;
     }
+
+    export interface IBarRelated {
+        relativePosition: Point;
+    }
 }

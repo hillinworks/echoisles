@@ -23,11 +23,15 @@
                 horizontalMargin: 10,
                 thickness: 1
             },
-            tremoloOffset: 12
+            tremoloOffset: 12,
+            modifierMargin: 6
         },
 
         beam: {
-            minimumVerticalPadding: 6
+            minimumVerticalPadding: 6,
+            connectorThickness: 4,
+            connectorSpacing: 4,
+            maximumSemiBeamWidth: 12
         }
     }
 };

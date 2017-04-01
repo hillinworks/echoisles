@@ -1,10 +1,11 @@
 ﻿import { WidgetBase } from "../WidgetBase";
-import { Point } from "../Point";
 import { BaseNoteValue } from "../../Core/MusicTheory/BaseNoteValue";
 import { Size } from "../Size";
 import { Style } from "../Style";
+import { Bar } from "./Bar";
+import {Point} from "../Point";
 
-export class Stem extends WidgetBase {
+export class Stem extends WidgetBase implements Bar.IBarRelated {
 
     relativePosition: Point;
 

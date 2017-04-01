@@ -8,6 +8,9 @@ import { Point } from "../Point";
 import { Rect } from "../Rect";
 import { BeamConnector } from "./BeamConnector";
 import { Style } from "../Style";
+import { BaseNoteValue } from "../../Core/MusicTheory/BaseNoteValue";
+import { Vector } from "../Vector";
+import { BeamContext } from "./BeamContext";
 
 function* getAllBeats(beam: Beam): Iterable<Beat> {
     for (let element of beam.elements) {
@@ -30,7 +33,7 @@ export class Beam extends BeatWidgetBase {
 
     private _desiredEpitaxySize: Size;
 
-    constructor(parent: BeatWidgetBase.ParentType, readonly beam: CoreBeam) {
+    constructor(readonly parent: BeatWidgetBase.ParentType, readonly beam: CoreBeam) {
         super(parent);
         this.initializeComponents();
     }
@@ -76,7 +79,7 @@ export class Beam extends BeatWidgetBase {
 
         let bounds = Rect.zero;
         for (let element of this.elements) {
-            element.slope = this.slope;
+            element.context = this.context;
             element.measure(availableSize);
             bounds = bounds.union(Rect.create(element.rootPosition, element.desiredSize));
         }
@@ -93,7 +96,7 @@ export class Beam extends BeatWidgetBase {
     protected arrangeOverride(finalSize: Size): Size {
         let bounds = Rect.create(this.position);
         for (let element of this.elements) {
-            element.slope = this.slope;
+            element.context = this.context;
 
             // note rootPosition is relative to owner bar
             const x = this.ownerBar.position.x + element.rootPosition.x;
@@ -106,8 +109,15 @@ export class Beam extends BeatWidgetBase {
             bounds = bounds.union(Rect.create(element.position, element.renderSize));
         }
 
-        this.connector.setTerminals(this.ownerBar.position.translate(this.firstBeat.tipPosition),
-            this.ownerBar.position.translate(this.lastBeat.tipPosition));
+        const connectorVerticalOffset =
+            this.ownerVoice.transformEpitaxy(this.getConnectorVerticalOffset(this.beam.beatNoteValue));
+        const connectorTip1 =
+            this.firstBeat.tipPosition.translate(new Vector(0, connectorVerticalOffset));
+        const connectorTip2 =
+            this.lastBeat.tipPosition.translate(new Vector(0, connectorVerticalOffset));
+
+        this.connector.setTerminals(this.ownerBar.position.translate(connectorTip1),
+            this.ownerBar.position.translate(connectorTip2));
         this.connector.arrange(bounds);
 
         return bounds.size;
@@ -117,7 +127,11 @@ export class Beam extends BeatWidgetBase {
     private updateSlope() {
         let maxSlope = Number.MIN_VALUE;
         let p0: Point | undefined = undefined;
+        let minNoteValue = this.beam.beatNoteValue;
         for (let beat of getAllBeats(this)) {
+
+            minNoteValue = Math.min(minNoteValue, beat.beat.noteValue.base);
+
             beat.measureBody();
 
             if (p0) {
@@ -129,7 +143,11 @@ export class Beam extends BeatWidgetBase {
             }
         }
 
-        this.slope = new BeamSlope(p0!.x, p0!.y, maxSlope);
+        const additionalSpaceForBeamConnectors = (this.beam.beatNoteValue - minNoteValue)
+            * (Style.current.beam.connectorThickness + Style.current.beam.connectorSpacing);
+
+        const slope = new BeamSlope(p0!.x, p0!.y + this.ownerVoice.transformEpitaxy(additionalSpaceForBeamConnectors), maxSlope);
+        this.context = new BeamContext(this, slope);
     }
 
     private updateHeightMap() {
@@ -138,12 +156,22 @@ export class Beam extends BeatWidgetBase {
         this.ownerVoice.heightMap.ensureHeightSloped(
             this.ownerBar.relativePosition.x + firstBeat.tipPosition.x,
             lastBeat.tipPosition.x - firstBeat.tipPosition.x,
-            firstBeat.desiredEpitaxySize.height,
-            lastBeat.desiredEpitaxySize.height,
+            firstBeat.desiredEpitaxySize.height + Style.current.beam.minimumVerticalPadding,
+            lastBeat.desiredEpitaxySize.height + Style.current.beam.minimumVerticalPadding,
             Style.current.note.stem.horizontalMargin);
     }
 
     destroy() {
         this.destroyChildren(this.elements, this.connector);
     }
+
+    getConnectorVerticalOffset(noteValue: BaseNoteValue): number {
+        if (noteValue >= this.beam.beatNoteValue) {
+            return 0;
+        }
+
+        return -(noteValue - this.beam.beatNoteValue)
+            * (Style.current.beam.connectorSpacing + Style.current.beam.connectorThickness);
+    }
 }
+

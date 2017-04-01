@@ -197,6 +197,11 @@ export module DocumentRow {
         getPositionRelativeToOwnerRow(relativePosition: Point): Point {
             return this.relativePosition.translate(relativePosition);
         }
+
+
+        getXRelativeToOwnerRow(x: number): number {
+            return this.relativePosition.x + x;
+        }
     }
 
 }
