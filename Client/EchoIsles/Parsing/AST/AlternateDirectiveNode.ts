@@ -1,17 +1,14 @@
 ﻿import { DirectiveNode } from "./DirectiveNode";
 import { LiteralNode } from "./LiteralNode";
 import { DocumentContext } from "../DocumentContext";
-import { ILogger } from "../../Core/Logging/ILogger";
 import { Alternation } from "../../Core/Sheet/Alternation";
 import { Explicity } from "../../Core/Explicity";
-import { LogLevel } from "../../Core/Logging/LogLevel";
 import { Messages } from "../Messages";
 import { AlternationText } from "../../Core/MusicTheory/AlternationText";
-import { assert } from "../../Core/Utilities/Debug";
 import { Scanner } from "../Scanner";
-import { IParseResult, ParseHelper } from "../ParseResult";
+import { ParseResult, ParseHelper } from "../ParseResult";
 import { TextRange } from "../../Core/Parsing/TextRange";
-import {max} from "../../Core/Utilities/LinqLite";
+import { max } from "../../Core/Utilities/LinqLite";
 
 export class AlternateDirectiveNode extends DirectiveNode {
 
@@ -21,33 +18,37 @@ export class AlternateDirectiveNode extends DirectiveNode {
         super(range);
     }
 
-    apply(context: DocumentContext, logger: ILogger): boolean {
-        const result = this.toDocumentElement(context, logger);
-        if (!result) {
-            return false;
+    apply(context: DocumentContext): ParseResult<void> {
+        const helper = new ParseHelper();
+        const result = this.compile(context);
+        if (!ParseHelper.isSuccessful(result)) {
+            return helper.relayFailure(result);
         }
 
+        const alternation = result.value;
+
         if (context.documentState.alternationTextExplicity !== Explicity.NotSpecified
-            && result.explicity !== context.documentState.alternationTextExplicity) {
-            logger.report(LogLevel.Warning,
-                this.range.to.toRange(),
-                Messages.Warning_InconsistentAlternationTextExplicity);
+            && alternation.explicity !== context.documentState.alternationTextExplicity) {
+            helper.warning(this.range.to.toRange(), Messages.Warning_InconsistentAlternationTextExplicity);
         }
 
         context.alterDocumentState(state => {
-            for (let index of result.indices) {
+
+            for (let index of alternation.indices) {
                 state.definedAlternationIndices.add(index);
             }
 
-            state.currentAlternation = result;
-            state.alternationTextType = result.textType;
-            state.alternationTextExplicity = result.explicity;
+            state.currentAlternation = alternation;
+            state.alternationTextType = alternation.textType;
+            state.alternationTextExplicity = alternation.explicity;
         });
 
-        return true;
+        return helper.success(undefined);
     }
 
-    private toDocumentElement(context: DocumentContext, logger: ILogger): Alternation | undefined {
+    private compile(context: DocumentContext): ParseResult<Alternation> {
+        const helper = new ParseHelper();
+
         if (this.alternationTexts.length === 0) { // implicit
             const implicitIndex = max(context.documentState.definedAlternationIndices) + 1;
             const alternation = new Alternation();
@@ -58,7 +59,7 @@ export class AlternateDirectiveNode extends DirectiveNode {
             alternation.explicity = Explicity.Implicit;
             alternation.indices = [implicitIndex];
 
-            return alternation;
+            return helper.success(alternation);
         }
 
         const element = new Alternation();
@@ -76,33 +77,27 @@ export class AlternateDirectiveNode extends DirectiveNode {
             }
 
             if (referenceTextType !== undefined && referenceTextType !== result.type) {
-                logger.report(LogLevel.Warning,
-                    alternationText.range,
-                    Messages.Warning_InconsistentAlternationTextType);
+                helper.warning(alternationText.range, Messages.Warning_InconsistentAlternationTextType);
             } else {
                 referenceTextType = result.type;
             }
 
             if (context.documentState.definedAlternationIndices.contains(result.index)) {
-                logger.report(LogLevel.Error, alternationText.range,
-                    Messages.Error_DuplicatedAlternationText, alternationText.value);
-
-                return undefined;
+                return helper.fail(alternationText.range, Messages.Error_DuplicatedAlternationText, alternationText.value);
             }
 
             indices.push(result.index);
         }
 
-        assert(referenceTextType !== undefined, "referenceTextType !== undefined");
         element.textType = referenceTextType;
         element.indices = indices;
-        return element;
+        return helper.success(element);
     }
 }
 
 export module AlternateDirectiveNode {
 
-    export function parseBody(scanner: Scanner): IParseResult<AlternateDirectiveNode> {
+    export function parseBody(scanner: Scanner): ParseResult<AlternateDirectiveNode> {
 
         const node = new AlternateDirectiveNode();
         const hasColon = scanner.skipOptional(":", true);
@@ -121,7 +116,7 @@ export module AlternateDirectiveNode {
         if (hasColon && node.alternationTexts.length === 0) {
             helper.warning(scanner.lastReadRange, Messages.Warning_AlternationTextExpectedAfterColon);
         }
-        
+
         return helper.success(node);
     }
 

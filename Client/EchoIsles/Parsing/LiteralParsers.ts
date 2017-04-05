@@ -17,12 +17,12 @@ import { HoldAndPause } from "../Core/MusicTheory/HoldAndPause";
 import { BeatAccent } from "../Core/MusicTheory/BeatAccent";
 import { BarLine } from "../Core/MusicTheory/BarLine";
 import { StaffType } from "../Core/MusicTheory/StaffType";
-import { IParseResult, ParseHelper } from "./ParseResult";
+import { ParseResult, ParseResultMaybeEmpty, ParseHelper, ParseSuccessOrEmptyResult } from "./ParseResult";
 import { LogMessage } from "../Core/Logging/LogMessage";
 
 export module LiteralParsers {
 
-    export function readInteger(scanner: Scanner): IParseResult<LiteralNode<number>> {
+    export function readInteger(scanner: Scanner): ParseSuccessOrEmptyResult<LiteralNode<number>> {
         const value = scanner.readInteger();
         if (value === undefined) {
             return ParseHelper.empty();
@@ -31,7 +31,7 @@ export module LiteralParsers {
         return ParseHelper.success(LiteralNode.create(value, scanner.lastReadRange));
     }
 
-    export function readString(scanner: Scanner, pattern: string): IParseResult<LiteralNode<string>> {
+    export function readString(scanner: Scanner, pattern: string): ParseSuccessOrEmptyResult<LiteralNode<string>> {
         const value = scanner.readPattern(pattern);
         if (value === undefined) {
             return ParseHelper.empty();
@@ -40,11 +40,11 @@ export module LiteralParsers {
         return ParseHelper.success(LiteralNode.create(value, scanner.lastReadRange));
     }
 
-    export function readChordName(scanner: Scanner): IParseResult<LiteralNode<string>> {
+    export function readChordName(scanner: Scanner): ParseSuccessOrEmptyResult<LiteralNode<string>> {
         return readString(scanner, "[a-zA-Z0-9][a-zA-Z0-9\\*\\$\\#♯♭\\-\\+\\?'\\`\\~\\&\\^\\!]*");
     }
 
-    export function readBaseNoteValue(scanner: Scanner): IParseResult<LiteralNode<BaseNoteValue>> {
+    export function readBaseNoteValue(scanner: Scanner): ParseResult<LiteralNode<BaseNoteValue>> {
         const reciprocal = scanner.readInteger();
         if (reciprocal === undefined) {
             return ParseHelper.fail(scanner.lastReadRange, Messages.Error_NoteValueExpected);
@@ -58,7 +58,7 @@ export module LiteralParsers {
         return ParseHelper.success(LiteralNode.create(baseNoteValue, scanner.lastReadRange));
     }
 
-    export function readNoteValueAugment(scanner: Scanner): IParseResult<LiteralNode<NoteValueAugment>> {
+    export function readNoteValueAugment(scanner: Scanner): ParseResult<LiteralNode<NoteValueAugment>> {
         const anchor = scanner.makeAnchor();
         let dots = 0;
         while (!scanner.isEndOfLine) {
@@ -83,7 +83,7 @@ export module LiteralParsers {
         }
     }
 
-    export function readBaseNoteName(scanner: Scanner): IParseResult<LiteralNode<BaseNoteName>> {
+    export function readBaseNoteName(scanner: Scanner): ParseSuccessOrEmptyResult<LiteralNode<BaseNoteName>> {
         const noteNameChar = scanner.readChar();
         const baseNoteName = BaseNoteName.parse(noteNameChar);
         if (baseNoteName === undefined) {
@@ -93,7 +93,7 @@ export module LiteralParsers {
         return ParseHelper.success(LiteralNode.create(baseNoteName, scanner.lastReadRange));
     }
 
-    export function readAccidental(scanner: Scanner): IParseResult<LiteralNode<Accidental>> {
+    export function readAccidental(scanner: Scanner): ParseResultMaybeEmpty<LiteralNode<Accidental>> {
         const accidentalText = scanner.readAnyPatternOf("\\#\\#",
             "bb",
             "♯♯",
@@ -117,7 +117,7 @@ export module LiteralParsers {
         return ParseHelper.success(LiteralNode.create(accidental, scanner.lastReadRange));
     }
 
-    export function readChordStrumTechnique(scanner: Scanner): IParseResult<LiteralNode<StrumTechnique.ChordType>> {
+    export function readChordStrumTechnique(scanner: Scanner): ParseSuccessOrEmptyResult<LiteralNode<StrumTechnique.ChordType>> {
         switch (scanner.readAnyPatternOf("rasg", "ad", "au", "\\|", "x", "d", "↑", "u", "↓")) {
             case "|":
             case "x":
@@ -145,7 +145,7 @@ export module LiteralParsers {
         return ParseHelper.empty();
     }
 
-    export function readStrumTechnique(scanner: Scanner): IParseResult<LiteralNode<StrumTechnique>> {
+    export function readStrumTechnique(scanner: Scanner): ParseSuccessOrEmptyResult<LiteralNode<StrumTechnique>> {
         switch (scanner.readAnyPatternOf("rasg", "ad", "au", "pu", "pd", "d", "D", "↑", "u", "U", "↓")) {
             case "d":
             case "↑":
@@ -169,7 +169,7 @@ export module LiteralParsers {
     }
 
     export function readTie(scanner: Scanner):
-        IParseResult<{ tie: ExistencyNode, tiePosition?: LiteralNode<VerticalDirection> }> {
+        ParseSuccessOrEmptyResult<{ tie: ExistencyNode, tiePosition?: LiteralNode<VerticalDirection> }> {
 
         switch (scanner.readAnyPatternOf("⁀", "‿", "~\\^", "~v", "~")) {
             case "~":
@@ -192,7 +192,7 @@ export module LiteralParsers {
     }
 
 
-    export function readPreBeatConnection(scanner: Scanner): IParseResult<LiteralNode<NoteConnection.PreBeatType>> {
+    export function readPreBeatConnection(scanner: Scanner): ParseSuccessOrEmptyResult<LiteralNode<NoteConnection.PreBeatType>> {
         switch (scanner.readAnyPatternOf("\\.\\/", "\\`\\\\")) {
             case "./":
                 return ParseHelper.success(LiteralNode
@@ -205,7 +205,7 @@ export module LiteralParsers {
         return ParseHelper.empty();
     }
 
-    export function readPostBeatConnection(scanner: Scanner): IParseResult<LiteralNode<NoteConnection.PostBeatType>> {
+    export function readPostBeatConnection(scanner: Scanner): ParseSuccessOrEmptyResult<LiteralNode<NoteConnection.PostBeatType>> {
         switch (scanner.readAnyPatternOf("\\/\\`", "\\\\\\.")) {
             case "/`":
                 return ParseHelper.success(LiteralNode
@@ -218,7 +218,7 @@ export module LiteralParsers {
         return ParseHelper.empty();
     }
 
-    export function readPreNoteConnection(scanner: Scanner): IParseResult<LiteralNode<NoteConnection.PreNoteType>> {
+    export function readPreNoteConnection(scanner: Scanner): ParseSuccessOrEmptyResult<LiteralNode<NoteConnection.PreNoteType>> {
         switch (scanner.readAnyPatternOf("\\/", "\\\\", "\\.\\/", "\\`\\\\", "h", "p", "s")) {
             case "/":
             case "\\":
@@ -242,7 +242,7 @@ export module LiteralParsers {
         return ParseHelper.empty();
     }
 
-    export function readPostNoteConnection(scanner: Scanner): IParseResult<LiteralNode<NoteConnection.PostNoteType>> {
+    export function readPostNoteConnection(scanner: Scanner): ParseSuccessOrEmptyResult<LiteralNode<NoteConnection.PostNoteType>> {
         switch (scanner.readAnyPatternOf("\\/\\`", "\\\\\\.")) {
             case "/`":
                 return ParseHelper.success(LiteralNode
@@ -255,7 +255,7 @@ export module LiteralParsers {
         return ParseHelper.empty();
     }
 
-    export function readOrnament(scanner: Scanner): IParseResult<{ ornament: LiteralNode<Ornament>, parameter?: LiteralNode<number> }> {
+    export function readOrnament(scanner: Scanner): ParseSuccessOrEmptyResult<{ ornament: LiteralNode<Ornament>, parameter?: LiteralNode<number> }> {
         switch (scanner.readAnyPatternOf("trill", "tr")) {
             case "tr":
             case "trill":
@@ -265,7 +265,7 @@ export module LiteralParsers {
         return ParseHelper.empty();
     }
 
-    export function readNoteRepetition(scanner: Scanner): IParseResult<LiteralNode<NoteRepetition>> {
+    export function readNoteRepetition(scanner: Scanner): ParseSuccessOrEmptyResult<LiteralNode<NoteRepetition>> {
         switch (scanner.readAnyPatternOf("tremolo")) {
             case "tremolo":
                 return ParseHelper.success(LiteralNode.create(NoteRepetition.Tremolo, scanner.lastReadRange));
@@ -275,7 +275,7 @@ export module LiteralParsers {
     }
 
 
-    export function readNoteEffectTechnique(scanner: Scanner): IParseResult<{ technique: LiteralNode<NoteEffectTechnique>, parameter?: LiteralNode<number> }> {
+    export function readNoteEffectTechnique(scanner: Scanner): ParseSuccessOrEmptyResult<{ technique: LiteralNode<NoteEffectTechnique>, parameter?: LiteralNode<number> }> {
         switch (scanner.readAnyPatternOf("dead", "bend", "x", "b")) {
             case "dead":
             case "x":
@@ -293,7 +293,7 @@ export module LiteralParsers {
         return ParseHelper.empty();
     }
 
-    export function readHoldAndPause(scanner: Scanner): IParseResult<LiteralNode<HoldAndPause>> {
+    export function readHoldAndPause(scanner: Scanner): ParseSuccessOrEmptyResult<LiteralNode<HoldAndPause>> {
         switch (scanner.readAnyPatternOf("fermata", "staccato", "tenuto")) {
             case "fermata":
                 return ParseHelper.success(LiteralNode.create(HoldAndPause.Fermata, scanner.lastReadRange));
@@ -306,7 +306,7 @@ export module LiteralParsers {
         return ParseHelper.empty();
     }
 
-    export function readBeatAccent(scanner: Scanner): IParseResult<LiteralNode<BeatAccent>> {
+    export function readBeatAccent(scanner: Scanner): ParseSuccessOrEmptyResult<LiteralNode<BeatAccent>> {
         switch (scanner.readAnyPatternOf("accented", "heavy", "marcato")) {
             case "accented":
                 return ParseHelper.success(LiteralNode.create(BeatAccent.Accented, scanner.lastReadRange));
@@ -318,7 +318,7 @@ export module LiteralParsers {
         return ParseHelper.empty();
     }
 
-    export function readOpenBarLine(scanner: Scanner): IParseResult<LiteralNode<BarLine.OpenType>> {
+    export function readOpenBarLine(scanner: Scanner): ParseSuccessOrEmptyResult<LiteralNode<BarLine.OpenType>> {
         if (scanner.expect("||:")) {
             return ParseHelper.success(LiteralNode
                 .create<BarLine.OpenType>(BarLine.BeginRepeat, scanner.lastReadRange));
@@ -335,7 +335,7 @@ export module LiteralParsers {
         return ParseHelper.empty();
     }
 
-    export function readCloseBarLine(scanner: Scanner): IParseResult<LiteralNode<BarLine.CloseType>> {
+    export function readCloseBarLine(scanner: Scanner): ParseSuccessOrEmptyResult<LiteralNode<BarLine.CloseType>> {
         if (scanner.expect(":||")) {
             return ParseHelper.success(LiteralNode.create<BarLine.CloseType>(BarLine.EndRepeat, scanner.lastReadRange));
         }
@@ -351,7 +351,7 @@ export module LiteralParsers {
         return ParseHelper.empty();
     }
 
-    export function readStaffType(scanner: Scanner): IParseResult<LiteralNode<StaffType>> {
+    export function readStaffType(scanner: Scanner): ParseResult<LiteralNode<StaffType>> {
 
         switch (scanner.readToLineEnd().trim().toLowerCase()) {
             case "guitar":

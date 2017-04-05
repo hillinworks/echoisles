@@ -1,13 +1,14 @@
 ﻿import { Element } from "../Element"
 import { CapoInfo } from "../../MusicTheory/String/Plucked/CapoInfo";
 import { Defaults } from "./Defaults"
+import {ISequence} from "../../Utilities/LinqLite";
 
 export class Capo extends Element {
     capoInfo: CapoInfo;
 
     offsetFrets(offsets: number[]): number[] {
         if (offsets === undefined)
-            offsets = new Array<number>(Defaults.strings);
+            offsets = ISequence.repeat(0, Defaults.strings).toArray();
 
         if (this.capoInfo.affectedStrings === undefined) {
             for (let i = 0; i < Defaults.strings; ++i)

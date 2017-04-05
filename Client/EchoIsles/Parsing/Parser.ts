@@ -1,10 +1,22 @@
 ﻿import { Scanner } from "./Scanner";
 import { DocumentNode } from "./AST/DocumentNode";
-import { IParseResult } from "./ParseResult";
+import { ParseResult, ParseHelper } from "./ParseResult";
+import { Document } from "../Core/Sheet/Document";
 
 export module Parser {
-    export function parse(source: string): IParseResult<DocumentNode> {
+    export function parse(source: string): ParseResult<Document> {
+        const helper = new ParseHelper();
         const scanner = new Scanner(source);
-        return DocumentNode.parse(scanner);
+        const parseResult = helper.absorb(DocumentNode.parse(scanner));
+        if (!ParseHelper.isSuccessful(parseResult)) {
+            return helper.fail();
+        }
+
+        const compileResult = helper.absorb(parseResult.value.compile());
+        if (!ParseHelper.isSuccessful(compileResult)) {
+            return helper.fail();
+        }
+
+        return helper.success(compileResult.value);
     }
 }

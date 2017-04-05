@@ -1,53 +1,51 @@
-﻿import { ILogger } from "../../Core/Logging/ILogger";
-import { DirectiveNode } from "./DirectiveNode";
+﻿import { DirectiveNode } from "./DirectiveNode";
 import { LiteralNode } from "./LiteralNode";
 import { DocumentContext } from "../DocumentContext";
-import { LogLevel } from "../../Core/Logging/LogLevel";
 import { Messages } from "../Messages";
 import { BaseNoteValue } from "../../Core/MusicTheory/BaseNoteValue";
 import { TimeSignature } from "../../Core/Sheet/TimeSignature";
 import { Time } from "../../Core/MusicTheory/Time";
 import { Scanner } from "../Scanner";
-import { IParseResult, ParseHelper } from "../ParseResult";
+import { ParseResult, ParseResultMaybeEmpty, ParseHelper } from "../ParseResult";
 import { TextRange } from "../../Core/Parsing/TextRange";
 
 
 export class TimeDirectiveNode extends DirectiveNode {
+
     beats: LiteralNode<number>;
     noteValue: LiteralNode<BaseNoteValue>;
 
-    apply(context: DocumentContext, logger: ILogger): boolean {
+    apply(context: DocumentContext): ParseResultMaybeEmpty<void> {
 
-        const result = this.toDocumentElement(context, logger);
-        if (!result)
-            return false;
+        const result = this.compile(context);
+        if (!ParseHelper.isSuccessful(result)) {
+            return ParseHelper.relayState(result);
+        }
 
-        context.alterDocumentState(state => state.timeSignature = result);
+        context.alterDocumentState(state => state.timeSignature = result.value);
 
-        return true;
+        return ParseHelper.voidSuccess;
     }
 
-    private toDocumentElement(context: DocumentContext, logger: ILogger): TimeSignature | undefined {
-        if ((/*context.DocumentState.RhythmTemplate !== undefined || */ context.documentState.barAppeared)  // todo: handle RhythmTemplate
+    private compile(context: DocumentContext): ParseResultMaybeEmpty<TimeSignature> {
+        const helper = new ParseHelper();
+        if ((/*context.DocumentState.RhythmTemplate !== undefined || */
+            context.documentState.barAppeared) // todo: handle RhythmTemplate
             && context.documentState.timeSignature === undefined) {
-            logger.report(LogLevel.Error,
-                this.range,
-                Messages.Error_TimeInstructionAfterBarAppearedOrRhythmInstruction);
-
-            return undefined;
+            return helper.fail(this.range, Messages.Error_TimeInstructionAfterBarAppearedOrRhythmInstruction);
         }
 
         if (context.documentState.timeSignature !== undefined
             && this.valueEquals(context.documentState.timeSignature)) {
-            logger.report(LogLevel.Suggestion, this.range, Messages.Suggestion_UselessTimeInstruction);
-            return undefined;
+            helper.suggestion(this.range, Messages.Suggestion_UselessTimeInstruction);
+            return ParseHelper.empty();
         }
 
         const element = new TimeSignature();
         element.range = this.range;
         element.time = new Time(this.beats.value, this.noteValue.value);
 
-        return element;
+        return ParseHelper.success(element);
     }
 
     valueEquals(other: TimeSignature): boolean {
@@ -60,7 +58,7 @@ export class TimeDirectiveNode extends DirectiveNode {
 
 export module TimeDirectiveNode {
 
-    export function parseBody(scanner: Scanner): IParseResult<TimeDirectiveNode> {
+    export function parseBody(scanner: Scanner): ParseResult<TimeDirectiveNode> {
 
         scanner.skipOptional(":", true);
 

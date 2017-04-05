@@ -2,13 +2,11 @@
 import { LiteralNode } from "../LiteralNode";
 import { ChordFingeringNode } from "./ChordFingeringNode";
 import { DocumentContext } from "../../DocumentContext";
-import { ILogger } from "../../../Core/Logging/ILogger";
-import { LogLevel } from "../../../Core/Logging/LogLevel";
 import { Messages } from "../../Messages";
 import { ChordDefinition } from "../../../Core/Sheet/Tablature/ChordDefinition";
 import { TablatureState } from "../../../Core/Sheet/Tablature/TablatureState";
 import { Scanner, ParenthesisReadResult } from "../../Scanner";
-import { IParseResult, ParseHelper } from "../../ParseResult";
+import { ParseResult, ParseResultMaybeEmpty, ParseHelper } from "../../ParseResult";
 import { LiteralParsers } from "../../LiteralParsers";
 import { TextRange } from "../../../Core/Parsing/TextRange";
 import { any } from "../../../Core/Utilities/LinqLite";
@@ -22,27 +20,30 @@ export class ChordDirectiveNode extends DirectiveNode {
         super(range);
     }
 
-    apply(context: DocumentContext, logger: ILogger): boolean {
-        const result = this.toDocumentElement(context, logger);
-        if (!result) {
-            return false;
+    apply(context: DocumentContext): ParseResultMaybeEmpty<void> {
+        const result = this.compile(context);
+        if (!ParseHelper.isSuccessful(result)) {
+            return ParseHelper.relayState(result);
         }
 
-        context.alterDocumentState(state => (state as TablatureState).definedChords.add(result));
+        context.alterDocumentState(state => (state as TablatureState).definedChords.add(result.value));
 
-        return true;
+        return ParseHelper.voidSuccess;
     }
 
-    private toDocumentElement(context: DocumentContext, logger: ILogger): ChordDefinition | undefined {
+    private compile(context: DocumentContext): ParseResultMaybeEmpty<ChordDefinition> {
+        const helper = new ParseHelper();
+
         const tablatureState = context.documentState as TablatureState;
         if (any(tablatureState.definedChords, c => c.name === this.name.value)) {
-            logger.report(LogLevel.Warning, this.range, Messages.Warning_ChordAlreadyDefined);
-            return undefined;
+            helper.warning(this.range, Messages.Warning_ChordAlreadyDefined);
+            return helper.empty();
         }
 
-        const result = this.fingering.toDocumentElement(context, logger);
-        if (!result)
-            return undefined;
+        const result = this.fingering.compile(context);
+        if (!ParseHelper.isSuccessful(result)) {
+            return helper.relayFailure(result);
+        }
 
         const element = new ChordDefinition();
         element.range = this.range;
@@ -50,14 +51,14 @@ export class ChordDirectiveNode extends DirectiveNode {
             ? this.name.value
             : this.displayName.value;
         element.name = this.name.value;
-        element.fingering = result;
+        element.fingering = result.value;
 
-        return element;
+        return helper.success(element);
     }
 }
 
 export module ChordDirectiveNode {
-    export function parseBody(scanner: Scanner): IParseResult<ChordDirectiveNode> {
+    export function parseBody(scanner: Scanner): ParseResult<ChordDirectiveNode> {
         const node = new ChordDirectiveNode();
 
         scanner.skipWhitespaces();
@@ -80,7 +81,7 @@ export module ChordDirectiveNode {
 
         const fingering = ChordFingeringNode.parse(scanner, s => s.isEndOfLine);
         if (!ParseHelper.isSuccessful(fingering)) {
-            return ParseHelper.relayState(fingering);
+            return ParseHelper.relayFailure(fingering);
         }
 
         if (fingering.value!.fingerings.length === 0) {

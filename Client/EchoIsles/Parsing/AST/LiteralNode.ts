@@ -2,12 +2,9 @@
 import { TextRange } from "../../Core/Parsing/TextRange";
 
 export class LiteralNode<T> extends Node {
-    value: T;
 
-    constructor(value: T, range: TextRange) {
-        super();
-        this.value = value;
-        this.range = range;
+    constructor(readonly value: T, readonly range: TextRange) {
+        super(range);
     }
 
     toString(): string {

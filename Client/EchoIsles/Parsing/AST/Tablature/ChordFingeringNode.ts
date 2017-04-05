@@ -1,19 +1,17 @@
 ﻿import { Node } from "../Node";
 import { ChordFingeringNoteNode } from "./ChordFingeringNoteNode";
 import { DocumentContext } from "../../DocumentContext";
-import { ILogger } from "../../../Core/Logging/ILogger";
 import { ChordFingering } from "../../../Core/Sheet/Tablature/ChordFingering";
 import { Chord } from "../../../Core/Sheet/Tablature/Chord";
-import { LogLevel } from "../../../Core/Logging/LogLevel";
 import { Messages } from "../../Messages";
 import { Scanner } from "../../Scanner";
-import { IParseResult, ParseHelper } from "../../ParseResult";
+import { ParseResult, ParseHelper } from "../../ParseResult";
 import { TextRange } from "../../../Core/Parsing/TextRange";
 import { LiteralNode } from "../LiteralNode";
 import { Defaults } from "../../../Core/Sheet/Tablature/Defaults";
 import { LeftHandFingerIndex } from "../../../Core/Player/LeftHandFingerIndex";
 import { ExistencyNode } from "../ExistencyNode";
-import {L} from "../../../Core/Utilities/LinqLite";
+import { L } from "../../../Core/Utilities/LinqLite";
 
 export class ChordFingeringNode extends Node {
     readonly fingerings = new Array<ChordFingeringNoteNode>();
@@ -22,7 +20,10 @@ export class ChordFingeringNode extends Node {
         super(range);
     }
 
-    toDocumentElement(context: DocumentContext, logger: ILogger): ChordFingering | undefined {
+    compile(context: DocumentContext): ParseResult<ChordFingering> {
+
+        const helper = new ParseHelper();
+
         let fingerIndexSpecified: boolean | undefined = undefined;
         let ignoreFingerIndices = false;
         for (let fingering of this.fingerings) {
@@ -37,7 +38,7 @@ export class ChordFingeringNode extends Node {
 
             if ((fingering.fingerIndex !== undefined && !fingerIndexSpecified)
                 || (fingering.fingerIndex === undefined && fingerIndexSpecified)) {
-                logger.report(LogLevel.Warning, this.range, Messages.Warning_ChordNotAllFingerIndexSpecified);
+                helper.warning(this.range, Messages.Warning_ChordNotAllFingerIndexSpecified);
                 ignoreFingerIndices = true;
                 break;
             }
@@ -47,14 +48,18 @@ export class ChordFingeringNode extends Node {
 
         const element = new ChordFingering();
         element.range = this.range;
-        element.notes = L(this.fingerings).select(f => f.toDocumentElement(ignoreFingerIndices)).toArray();
+        element.notes = L(this.fingerings).select(n => {
+            const note = n.compile(ignoreFingerIndices);
+            helper.absorb(note);
+            return note.value;
+        }).toArray();
 
-        return element;
+        return helper.success(element);
     }
 }
 
 export module ChordFingeringNode {
-    export function parse(scanner: Scanner, terminatorPredicate: Scanner.Predicate): IParseResult<ChordFingeringNode> {
+    export function parse(scanner: Scanner, terminatorPredicate: Scanner.Predicate): ParseResult<ChordFingeringNode> {
         const anchor = scanner.makeAnchor();
         const helper = new ParseHelper();
         const node = new ChordFingeringNode();

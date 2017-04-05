@@ -1,45 +1,42 @@
-﻿import { ILogger } from "../../Core/Logging/ILogger";
-import { DirectiveNode } from "./DirectiveNode";
+﻿import { DirectiveNode } from "./DirectiveNode";
 import { LiteralNode } from "./LiteralNode";
 import { DocumentContext } from "../DocumentContext";
 import { Section } from "../../Core/Sheet/Section";
-import { LogLevel } from "../../Core/Logging/LogLevel";
 import { Messages } from "../Messages";
 import { Scanner, ParenthesisReadResult } from "../Scanner";
-import { IParseResult, ParseHelper } from "../ParseResult";
+import { ParseResult, ParseResultMaybeEmpty, ParseHelper } from "../ParseResult";
 import { any } from "../../Core/Utilities/LinqLite";
 
 export class SectionDirectiveNode extends DirectiveNode {
     sectionName: LiteralNode<string>;
 
-    apply(context: DocumentContext, logger: ILogger): boolean {
-        const result = this.toDocumentElement(context, logger);
-        if (!result)
-            return false;
+    apply(context: DocumentContext): ParseResultMaybeEmpty<void> {
+        const result = this.compile(context);
+        if (!ParseHelper.isSuccessful(result)) {
+            return ParseHelper.relayState(result);
+        }
 
         context.alterDocumentState(state => {
-            const section = result as Section;
-            state.definedSections.add(section);
-            state.currentSection = section;
+            state.definedSections.add(result.value);
+            state.currentSection = result.value;
         });
 
-        return true;
+        return ParseHelper.voidSuccess;
     }
 
-    private toDocumentElement(context: DocumentContext, logger: ILogger): Section | undefined {
+    private compile(context: DocumentContext): ParseResultMaybeEmpty<Section> {
+        const helper = new ParseHelper();
+
         if (any(context.documentState.definedSections, this.valueEquals)) {
-            logger.report(LogLevel.Warning,
-                this.range,
-                Messages.Warning_DuplicatedSectionName,
-                this.sectionName.value);
-            return undefined;
+            helper.warning(this.range, Messages.Warning_DuplicatedSectionName, this.sectionName.value);
+            return helper.empty();
         }
 
         const element = new Section();
         element.range = this.range;
         element.name = this.sectionName.value;
 
-        return element;
+        return helper.success(element);
     }
 
     private valueEquals(section: Section): boolean {
@@ -48,7 +45,7 @@ export class SectionDirectiveNode extends DirectiveNode {
 }
 
 export module SectionDirectiveNode {
-    export function parseBody(scanner: Scanner): IParseResult<SectionDirectiveNode> {
+    export function parseBody(scanner: Scanner): ParseResult<SectionDirectiveNode> {
 
         const helper = new ParseHelper();
 

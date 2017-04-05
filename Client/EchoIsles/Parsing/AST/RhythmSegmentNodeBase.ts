@@ -1,12 +1,11 @@
 ﻿import { Node } from "./Node";
 import { VoiceNode } from "./VoiceNode";
 import { PreciseDuration } from "../../Core/MusicTheory/PreciseDuration";
-import { ILogger } from "../../Core/Logging/ILogger";
 import { RhythmSegmentBase } from "../../Core/Sheet/RhythmSegmentBase";
 import { VoicePart } from "../../Core/Sheet/VoicePart";
 import { DocumentContext } from "../DocumentContext";
 import { Scanner } from "../Scanner";
-import { IParseResult, ParseHelper } from "../ParseResult";
+import { ParseResult, ParseHelper } from "../ParseResult";
 import { Messages } from "../Messages";
 
 
@@ -30,32 +29,34 @@ export abstract class RhythmSegmentNodeBase extends Node {
         return new PreciseDuration(Math.max(this.bassVoice.duration.fixedPointValue, this.trebleVoice.duration.fixedPointValue));
     }
 
-    protected fillRhythmSegmentVoices(context: DocumentContext, logger: ILogger, rhythmSegment: RhythmSegmentBase) {
+    protected fillRhythmSegmentVoices(context: DocumentContext, rhythmSegment: RhythmSegmentBase): ParseResult<void> {
         const duration = this.duration;
 
         if (this.trebleVoice !== undefined) {
             this.trebleVoice.expectedDuration = duration;
 
-            const result = this.trebleVoice.toDocumentElement(context, logger, VoicePart.Treble);
+            const result = this.trebleVoice.compile(context, VoicePart.Treble);
 
-            if (!result)
-                return false;
+            if (!ParseHelper.isSuccessful(result)) {
+                return ParseHelper.relayFailure(result);
+            }
 
-            rhythmSegment.trebleVoice = result;
+            rhythmSegment.trebleVoice = result.value;
         }
 
         if (this.bassVoice !== undefined) {
             this.bassVoice.expectedDuration = duration;
 
-            const result = this.bassVoice.toDocumentElement(context, logger, VoicePart.Bass);
+            const result = this.bassVoice.compile(context, VoicePart.Bass);
 
-            if (!result)
-                return false;
+            if (!ParseHelper.isSuccessful(result)) {
+                return ParseHelper.relayFailure(result);
+            }
 
-            rhythmSegment.bassVoice = result;
+            rhythmSegment.bassVoice = result.value;
         }
 
-        return true;
+        return ParseHelper.voidSuccess;
     }
 }
 
@@ -86,7 +87,7 @@ export module RhythmSegmentNodeBase {
     }
 
 
-    export function parseRhythmDefinition(scanner: Scanner, node: RhythmSegmentNodeBase, optionalBrackets: boolean): IParseResult<void> {
+    export function parseRhythmDefinition(scanner: Scanner, node: RhythmSegmentNodeBase, optionalBrackets: boolean): ParseResult<void> {
         const helper = new ParseHelper();
 
         const anchor = scanner.makeAnchor();

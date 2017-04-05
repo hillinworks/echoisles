@@ -4,29 +4,25 @@ import { StringUtilities } from "../Utilities/StringUtilities";
 
 export class LogMessage {
 
-    static hint(range: TextRange, message: string, ...args: any[]): LogMessage {
+    static hint(range: TextRange | undefined, message: string, ...args: any[]): LogMessage {
         return new LogMessage(LogLevel.Hint, range, message, ...args);
     }
 
-    static suggestion(range: TextRange, message: string, ...args: any[]): LogMessage {
+    static suggestion(range: TextRange | undefined, message: string, ...args: any[]): LogMessage {
         return new LogMessage(LogLevel.Suggestion, range, message, ...args);
     }
 
-    static warning(range: TextRange, message: string, ...args: any[]): LogMessage {
+    static warning(range: TextRange | undefined, message: string, ...args: any[]): LogMessage {
         return new LogMessage(LogLevel.Warning, range, message, ...args);
     }
 
-    static error(range: TextRange, message: string, ...args: any[]): LogMessage {
+    static error(range: TextRange | undefined, message: string, ...args: any[]): LogMessage {
         return new LogMessage(LogLevel.Error, range, message, ...args);
     }
 
-    level: LogLevel;
-    range: TextRange;
-    message: string;
+    readonly message: string;
 
-    constructor(level: LogLevel, range: TextRange, message: string, ...args: any[]) {
-        this.level = level;
-        this.range = range;
+    constructor(readonly level: LogLevel, readonly range: TextRange | undefined, message: string, ...args: any[]) {
         this.message = StringUtilities.formatString(message, ...args);
     }
 }

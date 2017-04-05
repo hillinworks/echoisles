@@ -1,9 +1,8 @@
 ﻿import { RhythmSegmentNodeBase } from "./RhythmSegmentNodeBase";
-import { ILogger } from "../../Core/Logging/ILogger";
 import { DocumentContext } from "../DocumentContext";
 import { RhythmTemplateSegment } from "../../Core/Sheet/RhythmTemplateSegment";
 import { Scanner } from "../Scanner";
-import { IParseResult, ParseHelper } from "../ParseResult";
+import { ParseResult, ParseHelper } from "../ParseResult";
 import { TextRange } from "../../Core/Parsing/TextRange";
 
 export class RhythmTemplateSegmentNode extends RhythmSegmentNodeBase {
@@ -12,13 +11,15 @@ export class RhythmTemplateSegmentNode extends RhythmSegmentNodeBase {
         super(range);
     }
 
-    toDocumentElement(context: DocumentContext, logger: ILogger): RhythmTemplateSegment | undefined {
+    compile(context: DocumentContext): ParseResult<RhythmTemplateSegment> {
         const element = new RhythmTemplateSegment();
         element.range = this.range;
-        if (!this.fillRhythmSegmentVoices(context, logger, element))
-            return undefined;
+        const fillRhythmSegmentVoicesResult = this.fillRhythmSegmentVoices(context, element);
+        if (!ParseHelper.isSuccessful(fillRhythmSegmentVoicesResult)) {
+            return ParseHelper.relayFailure(fillRhythmSegmentVoicesResult);
+        }
 
-        return element;
+        return ParseHelper.success(element);
     }
 
     valueEquals(other: RhythmTemplateSegment): boolean {
@@ -44,11 +45,11 @@ export class RhythmTemplateSegmentNode extends RhythmSegmentNodeBase {
 }
 
 export module RhythmTemplateSegmentNode {
-    export function parse(scanner: Scanner, optionalBrackets = false): IParseResult<RhythmTemplateSegmentNode> {
+    export function parse(scanner: Scanner, optionalBrackets = false): ParseResult<RhythmTemplateSegmentNode> {
         const node = new RhythmTemplateSegmentNode();
         const baseParseResult = RhythmSegmentNodeBase.parseRhythmDefinition(scanner, node, optionalBrackets);
         if (!ParseHelper.isSuccessful(baseParseResult)) {
-            return ParseHelper.relayState(baseParseResult);
+            return ParseHelper.relayFailure(baseParseResult);
         }
 
         return ParseHelper.success(node, ...baseParseResult.messages);

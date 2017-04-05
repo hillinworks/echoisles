@@ -1,33 +1,33 @@
 ﻿import { DirectiveNode } from "./DirectiveNode";
 import { RhythmTemplateNode } from "./RhythmTemplateNode";
 import { DocumentContext } from "../DocumentContext";
-import { ILogger } from "../../Core/Logging/ILogger";
-import { LogLevel } from "../../Core/Logging/LogLevel";
 import { Messages } from "../Messages";
 import { TablatureState } from "../../Core/Sheet/Tablature/TablatureState";
 import { RhythmTemplate } from "../../Core/Sheet/RhythmTemplate";
 import { Scanner } from "../Scanner";
-import { IParseResult, ParseHelper } from "../ParseResult";
+import { ParseResult, ParseResultMaybeEmpty, ParseHelper } from "../ParseResult";
 
 export class RhythmDirectiveNode extends DirectiveNode {
     templateNode: RhythmTemplateNode;
 
-    apply(context: DocumentContext, logger: ILogger): boolean {
+    apply(context: DocumentContext): ParseResultMaybeEmpty<void> {
+        const helper = new ParseHelper();
         const tablatureState = context.documentState as TablatureState;
         if (tablatureState.rhythmTemplate !== undefined && this.valueEquals(tablatureState.rhythmTemplate)) {
-            logger.report(LogLevel.Suggestion, this.range, Messages.Suggestion_UselessRhythmInstruction);
-            return true;
+            helper.suggestion(this.range, Messages.Suggestion_UselessRhythmInstruction);
+            return helper.success(undefined);
         }
 
         context.currentBar = undefined; // todo: this is ugly, refactor it
 
-        const result = this.templateNode.toDocumentElement(context, logger);
-        if (!result)
-            return false;
+        const result = this.templateNode.compile(context);
+        if (!ParseHelper.isSuccessful(result)) {
+            return helper.relayFailure(result);
+        }
 
-        context.alterDocumentState(state => (state as TablatureState).rhythmTemplate = result);
+        context.alterDocumentState(state => (state as TablatureState).rhythmTemplate = result.value);
 
-        return true;
+        return helper.success(undefined);
     }
 
     valueEquals(other: RhythmTemplate): boolean {
@@ -36,11 +36,11 @@ export class RhythmDirectiveNode extends DirectiveNode {
 }
 
 export module RhythmDirectiveNode {
-    export function parseBody(scanner: Scanner): IParseResult<RhythmDirectiveNode> {
+    export function parseBody(scanner: Scanner): ParseResult<RhythmDirectiveNode> {
         scanner.skipOptional(":", true);
         const template = RhythmTemplateNode.parse(scanner);
         if (!ParseHelper.isSuccessful(template)) {
-            return ParseHelper.relayState(template);
+            return ParseHelper.relayFailure(template);
         }
 
         const node = new RhythmDirectiveNode();

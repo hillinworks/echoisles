@@ -13,78 +13,124 @@ interface IMessageContainer {
     readonly messages: LogMessage[];
 }
 
-export interface IParseResult<T> extends IMessageContainer {
-    result: ParseResultType;
-    value?: T;
+export interface IParseSuccessResult<T> extends IMessageContainer {
+    readonly result: ParseResultType.Success;
+    readonly value: T;
 }
 
-export class ParseResult<T> implements IParseResult<T> {
-
-    result: ParseResultType;
-    value?: T;
-    readonly messages: LogMessage[];
-
-    constructor(result: ParseResultType, value?: T, messages?: LogMessage[]) {
-        this.result = result;
-        this.value = value;
-        this.messages = messages || new Array<LogMessage>();
-    }
-
-    get isSuccessful(): boolean {
-        return this.result === ParseResultType.Success;
-    }
-
-    appendMessages(from: IMessageContainer | LogMessage[]) {
-        if (from.constructor === Array) {
-            this.messages.push(...(from as LogMessage[]));
-        } else {
-            this.messages.push(...(from as IMessageContainer).messages);
-        }
-    }
+export interface IParseEmptyResult extends IMessageContainer {
+    readonly result: ParseResultType.Empty;
+    readonly value: undefined;
 }
+
+export interface IParseFailedResult extends IMessageContainer {
+    readonly result: ParseResultType.Failed;
+}
+
+export type ParseNonSuccessfulResult = IParseFailedResult | IParseEmptyResult;
+
+export type ParseResult<T> = IParseSuccessResult<T> | IParseFailedResult;
+export type ParseResultMaybeEmpty<T> = ParseResult<T> | IParseEmptyResult;
+export type ParseSuccessOrEmptyResult<T> = IParseSuccessResult<T> | IParseEmptyResult;
 
 export class ParseHelper {
 
-    static success<T>(value: T, ...messages: LogMessage[]) {
-        return new ParseResult<T>(ParseResultType.Success, value, messages);
-    }
+    static readonly voidSuccess: IParseSuccessResult<void> = {
+        result: ParseResultType.Success,
+        value: undefined,
+        messages: new Array<LogMessage>(0)
+    };
 
-    static empty(...messages: LogMessage[]) {
+    static success<T>(value: T, ...messages: LogMessage[]): IParseSuccessResult<T> {
         return {
-            result: ParseResultType.Empty,
+            result: ParseResultType.Success,
+            value: value,
             messages: messages
         };
     }
 
-    static fail(range?: TextRange, message?: string, ...args: any[]) {
+    static assert<T>(result: ParseResultMaybeEmpty<T>): IParseSuccessResult<T> {
+        if (!ParseHelper.isSuccessful(result)) {
+            throw new Error("assertion failure, this ParseResult should be successful");
+        }
+
+        return result;
+    }
+
+    static assertNotFailed<T>(result: ParseResultMaybeEmpty<T>): ParseSuccessOrEmptyResult<T> {
+        if (!ParseHelper.isSuccessful(result) && !ParseHelper.isEmpty(result)) {
+            throw new Error("assertion failure, this ParseResult should be successful");
+        }
+
+        return result;
+    }
+
+    static empty(...messages: LogMessage[]): IParseEmptyResult {
+        return {
+            result: ParseResultType.Empty,
+            value: undefined,
+            messages: messages
+        };
+    }
+
+    static fail(range?: TextRange, message?: string, ...args: any[]): IParseFailedResult {
         return {
             result: ParseResultType.Failed,
             messages: range ? [LogMessage.error(range!, message!, ...args)] : emptyMessageArray
         };
     }
 
-    static isSuccessful(result: { result: ParseResultType }): boolean {
+    static isSuccessful<T>(result: ParseResultMaybeEmpty<T>): result is IParseSuccessResult<T> {
         return result.result === ParseResultType.Success;
+    }
+
+    static isEmpty<T>(result: ParseResultMaybeEmpty<T>): result is IParseEmptyResult {
+        return result.result === ParseResultType.Empty;
+    }
+
+    static isFailed<T>(result: ParseResultMaybeEmpty<T>): result is IParseFailedResult {
+        return result.result === ParseResultType.Failed;
     }
 
     /**
      * relay a parse result's result and messages, but omit its value
      * @param result the parse result to relay
      */
-    static relayState<T>(result: IParseResult<T>) {
+    static relayState(result: ParseNonSuccessfulResult): ParseNonSuccessfulResult {
+        if (ParseHelper.isEmpty(result)) {
+            return {
+                result: result.result,
+                value: undefined,
+                messages: result.messages
+            };
+        } else {
+            return {
+                result: result.result,
+                messages: result.messages
+            };
+        }
+    }
+
+    static relayFailure(result: IParseFailedResult): IParseFailedResult {
+
         return {
             result: result.result,
             messages: result.messages
         };
+
     }
 
     private readonly messages = new Array<LogMessage>();
 
-    success<T>(value: T) {
-        return new ParseResult<T>(ParseResultType.Success, value, this.messages);
+    success<T>(value: T): IParseSuccessResult<T> {
+        return {
+            result: ParseResultType.Success,
+            value: value,
+            messages: this.messages
+        };
     }
 
-    fail(range?: TextRange, message?: string, ...args: any[]) {
+    fail(range?: TextRange, message?: string, ...args: any[]): IParseFailedResult {
         if (range) {
             this.error(range!, message!, ...args);
         }
@@ -95,43 +141,53 @@ export class ParseHelper {
         };
     }
 
-    relay<T>(result: IParseResult<T>) {
-        return {
-            result: result.result,
-            value: result.value,
-            messages: this.messages.concat(result.messages)
-        };
-    }
-
-    relayFailure(messageContainer: IMessageContainer) {
-        this.messages.push(...messageContainer.messages);
-        return this.fail();
-    }
-
-    empty() {
+    empty(): IParseEmptyResult {
         return {
             result: ParseResultType.Empty,
+            value: undefined,
             messages: this.messages
         };
     }
 
-    hint(range: TextRange, message: string, ...args: any[]): void {
+    relay<T>(result: ParseResult<T>): ParseResult<T> {
+
+        if (ParseHelper.isSuccessful(result)) {
+            return {
+                result: result.result,
+                value: result.value,
+                messages: this.messages.concat(result.messages)
+            };
+        } else {
+            return {
+                result: result.result,
+                messages: this.messages.concat(result.messages)
+            };
+        }
+    }
+
+    relayFailure(messageContainer: IMessageContainer): IParseFailedResult {
+        this.messages.push(...messageContainer.messages);
+        return this.fail();
+    }
+
+
+    hint(range: TextRange | undefined, message: string, ...args: any[]): void {
         this.messages.push(new LogMessage(LogLevel.Hint, range, message, ...args));
     }
 
-    suggestion(range: TextRange, message: string, ...args: any[]): void {
+    suggestion(range: TextRange | undefined, message: string, ...args: any[]): void {
         this.messages.push(new LogMessage(LogLevel.Suggestion, range, message, ...args));
     }
 
-    warning(range: TextRange, message: string, ...args: any[]): void {
+    warning(range: TextRange | undefined, message: string, ...args: any[]): void {
         this.messages.push(new LogMessage(LogLevel.Warning, range, message, ...args));
     }
 
-    error(range: TextRange, message: string, ...args: any[]): void {
+    error(range: TextRange | undefined, message: string, ...args: any[]): void {
         this.messages.push(new LogMessage(LogLevel.Error, range, message, ...args));
     }
 
-    absorb<T>(result: IParseResult<T>): IParseResult<T> {
+    absorb<T>(result: ParseResultMaybeEmpty<T>): ParseResultMaybeEmpty<T> {
         this.messages.push(...result.messages);
         return result;
     }

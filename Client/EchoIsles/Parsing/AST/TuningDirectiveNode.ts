@@ -1,15 +1,13 @@
-﻿import { ILogger } from "../../Core/Logging/ILogger";
-import { DirectiveNode } from "./DirectiveNode";
+﻿import { DirectiveNode } from "./DirectiveNode";
 import { LiteralNode } from "./LiteralNode";
 import { DocumentContext } from "../DocumentContext";
-import { LogLevel } from "../../Core/Logging/LogLevel";
 import { Messages } from "../Messages";
 import { PitchNode } from "./PitchNode";
 import { TuningSignature } from "../../Core/Sheet/TuningSignature";
 import { Tuning } from "../../Core/MusicTheory/String/Tuning";
 import { TablatureState } from "../../Core/Sheet/Tablature/TablatureState";
 import { Scanner } from "../Scanner";
-import { IParseResult, ParseHelper } from "../ParseResult";
+import { ParseResult, ParseResultMaybeEmpty, ParseHelper, IParseSuccessResult } from "../ParseResult";
 import { TextRange } from "../../Core/Parsing/TextRange";
 import { GuitarTunings } from "../../Core/MusicTheory/String/Plucked/GuitarTunings";
 import { select } from "../../Core/Utilities/LinqLite";
@@ -18,34 +16,34 @@ export class TuningDirectiveNode extends DirectiveNode {
     name: LiteralNode<string>;
     readonly stringTunings = new Array<PitchNode>();
 
-    apply(context: DocumentContext, logger: ILogger): boolean {
+    apply(context: DocumentContext): ParseResultMaybeEmpty<void> {
+        const helper = new ParseHelper();
         if (context.documentState.barAppeared) {
-            logger.report(LogLevel.Error, this.range, Messages.Error_TuningInstructionAfterBarAppeared);
-            return false;
+            return helper.fail(this.range, Messages.Error_TuningInstructionAfterBarAppeared);
         }
 
         const tablatureState = context.documentState as TablatureState;
         if (tablatureState.tuningSignature !== undefined) {
-            logger.report(LogLevel.Warning, this.range, Messages.Warning_RedefiningTuningInstruction);
-            return false;
+            helper.warning(this.range, Messages.Warning_RedefiningTuningInstruction);
+            return helper.empty();
         }
 
-        const result = this.toDocumentElement(context, logger);
-        if (!result) {
-            return false;
+        const result = helper.absorb(this.compile(context));
+        if (!ParseHelper.isSuccessful(result)) {
+            return helper.fail();
         }
 
-        context.alterDocumentState(state => (state as TablatureState).tuningSignature = result);
+        context.alterDocumentState(state => (state as TablatureState).tuningSignature = result.value);
 
-        return true;
+        return ParseHelper.voidSuccess;
     }
 
-    private toDocumentElement(context: DocumentContext, logger: ILogger): TuningSignature | undefined {
+    private compile(context: DocumentContext): IParseSuccessResult<TuningSignature> {
         const element = new TuningSignature();
         element.range = this.range;
         element.tuning = new Tuning(LiteralNode.valueOrUndefined(this.name), ...select(this.stringTunings, t => t.toPitch()));
 
-        return element;
+        return ParseHelper.success(element);
     }
 }
 
@@ -58,14 +56,14 @@ export module TuningDirectiveNode {
                 return false;
             }
 
-            stringTunings.push(pitch.value!);
+            stringTunings.push(pitch.value);
             scanner.skipOptional(",", true);
         }
 
         return true;
     }
 
-    export function parseBody(scanner: Scanner): IParseResult<TuningDirectiveNode> {
+    export function parseBody(scanner: Scanner): ParseResult<TuningDirectiveNode> {
         scanner.skipOptional(":", true);
 
         const node = new TuningDirectiveNode();

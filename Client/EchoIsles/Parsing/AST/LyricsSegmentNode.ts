@@ -1,11 +1,10 @@
 ﻿import { Node } from "./Node";
-import { ILogger } from "../../Core/Logging/ILogger";
 import { LiteralNode } from "./LiteralNode";
 import { LyricsSegment } from "../../Core/Sheet/LyricsSegment";
 import { TextRange } from "../../Core/Parsing/TextRange";
 import { DocumentContext } from "../DocumentContext";
 import { Scanner, ParenthesisReadResult } from "../Scanner";
-import { IParseResult, ParseHelper } from "../ParseResult";
+import { ParseResult, ParseHelper, IParseSuccessResult } from "../ParseResult";
 import { LogMessage } from "../../Core/Logging/LogMessage";
 import { Messages } from "../Messages";
 import { StringBuilder } from "../../Core/Utilities/StringBuilder";
@@ -20,17 +19,17 @@ export class LyricsSegmentNode extends Node {
         this.range = range;
     }
 
-    toDocumentElement(context: DocumentContext, logger: ILogger): LyricsSegment | undefined {
+    compile(context: DocumentContext): IParseSuccessResult<LyricsSegment> {
         const segment = new LyricsSegment();
         segment.range = this.range;
         segment.text = this.text.value;
-        return segment;
+        return ParseHelper.success(segment);
     }
 }
 
 export module LyricsSegmentNode {
 
-    export function parse(scanner: Scanner, endOfLyricsPredicate: Scanner.Predicate): IParseResult<LyricsSegmentNode> {
+    export function parse(scanner: Scanner, endOfLyricsPredicate: Scanner.Predicate): ParseResult<LyricsSegmentNode> {
         const builder = new StringBuilder();
         const anchor = scanner.makeAnchor();
 

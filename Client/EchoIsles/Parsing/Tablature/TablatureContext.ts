@@ -1,6 +1,8 @@
 ﻿import { DocumentContext } from "../DocumentContext";
 import { BeatNote } from "../../Core/Sheet/BeatNote";
 import { BarLine } from "../../Core/MusicTheory/BarLine";
+import { DocumentState } from "../../Core/Sheet/DocumentState";
+import { TablatureState } from "../../Core/Sheet/Tablature/TablatureState";
 
 export class TablatureContext extends DocumentContext {
 
@@ -39,6 +41,10 @@ export class TablatureContext extends DocumentContext {
         }
 
         return undefined;
+    }
+
+    createDocumentState(): DocumentState {
+        return new TablatureState();
     }
 
 }

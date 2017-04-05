@@ -31,7 +31,7 @@ export class DocumentState {
         return this._isSealed;
     }
 
-    get currentAlternation(): Alternation | undefined{
+    get currentAlternation(): Alternation | undefined {
         return this._currentAlternation;
     }
 
@@ -131,8 +131,12 @@ export class DocumentState {
         state.definedSections.appendClone(this.definedSections);
     }
 
+    protected instantializeClone(): DocumentState {
+        return new DocumentState();
+    }
+
     cloneAsUnsealed(): DocumentState {
-        const clone = new DocumentState();
+        const clone = this.instantializeClone();
         this.cloneProperties(clone);
         return clone;
     }

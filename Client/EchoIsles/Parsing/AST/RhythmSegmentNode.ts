@@ -2,12 +2,11 @@
 import { LiteralNode } from "./LiteralNode";
 import { Chord } from "../../Core/Sheet/Tablature/Chord";
 import { ChordFingeringNode } from "./Tablature/ChordFingeringNode";
-import { ILogger } from "../../Core/Logging/ILogger";
 import { DocumentContext } from "../DocumentContext";
 import { RhythmSegment } from "../../Core/Sheet/RhythmSegment";
 import { ChordFingering } from "../../Core/Sheet/Tablature/ChordFingering";
 import { Scanner } from "../Scanner";
-import { IParseResult, ParseHelper } from "../ParseResult";
+import { ParseResult, ParseHelper } from "../ParseResult";
 import { Messages } from "../Messages";
 import { TextRange } from "../../Core/Parsing/TextRange";
 import { LiteralParsers } from "../LiteralParsers";
@@ -20,21 +19,25 @@ export class RhythmSegmentNode extends RhythmSegmentNodeBase {
         super(range);
     }
 
-    public toDocumentElement(context: DocumentContext, logger: ILogger): RhythmSegment | undefined {
+    compile(context: DocumentContext): ParseResult<RhythmSegment> {
+
         const segment = new RhythmSegment();
         segment.range = this.range;
 
-        if (!this.fillRhythmSegmentVoices(context, logger, segment))
-            return undefined;
+        const fillRhythmSegmentVoicesResult = this.fillRhythmSegmentVoices(context, segment);
+        if (!ParseHelper.isSuccessful(fillRhythmSegmentVoicesResult)) {
+            return ParseHelper.relayFailure(fillRhythmSegmentVoicesResult);
+        }
 
         let chordFingering: ChordFingering | undefined = undefined;
         if (this.chordName !== undefined || this.fingering !== undefined) {
             if (this.fingering !== undefined) {
-                const result = this.fingering.toDocumentElement(context, logger);
-                if (!result)
-                    return undefined;
+                const result = this.fingering.compile(context);
+                if (!ParseHelper.isSuccessful(result)) {
+                    return ParseHelper.relayFailure(result);
+                }
 
-                chordFingering = result;
+                chordFingering = result.value;
             }
 
             const range = this.chordName === undefined
@@ -51,12 +54,12 @@ export class RhythmSegmentNode extends RhythmSegmentNodeBase {
             segment.chord = chord;
         }
 
-        return segment;
+        return ParseHelper.success(segment);
     }
 }
 
 export module RhythmSegmentNode {
-    export function parse(scanner: Scanner): IParseResult<RhythmSegmentNode> {
+    export function parse(scanner: Scanner): ParseResult<RhythmSegmentNode> {
         const anchor = scanner.makeAnchor();
         const node = new RhythmSegmentNode();
         const helper = new ParseHelper();

@@ -5,7 +5,6 @@ import { VerticalDirection } from "../../Core/Style/VerticalDirection";
 import { NoteConnection } from "../../Core/MusicTheory/String/NoteConnection";
 import { NoteEffectTechnique } from "../../Core/MusicTheory/NoteEffectTechnique";
 import { NoteAccent } from "../../Core/MusicTheory/NoteAccent";
-import { ILogger } from "../../Core/Logging/ILogger";
 import { TablatureContext } from "../Tablature/TablatureContext";
 import { VoicePart } from "../../Core/Sheet/VoicePart";
 import { BeatNote } from "../../Core/Sheet/BeatNote";
@@ -14,7 +13,7 @@ import { LogLevel } from "../../Core/Logging/LogLevel";
 import { Messages } from "../Messages";
 import { DocumentContext } from "../DocumentContext";
 import { Scanner } from "../Scanner";
-import { IParseResult, ParseHelper } from "../ParseResult";
+import { ParseResult, ParseHelper } from "../ParseResult";
 import { LiteralParsers } from "../LiteralParsers";
 import { TextRange } from "../../Core/Parsing/TextRange";
 
@@ -34,12 +33,14 @@ export class BeatNoteNode extends Node {
         super(range);
     }
 
-    toDocumentElement(context: DocumentContext, logger: ILogger, voicePart: VoicePart): BeatNote | undefined {
+    compile(context: DocumentContext, voicePart: VoicePart): ParseResult<BeatNote> {
+
+        const helper = new ParseHelper();
+
         const tablatureState = context.documentState as TablatureState; // todo: refactor
         if (this.fret !== undefined
             && this.fret.value + tablatureState.minimumCapoFret < (tablatureState.getCapoFretOffset(this.string.value - 1))) {
-            logger.report(LogLevel.Warning,
-                this.fret.range,
+            helper.warning(this.fret.range,
                 Messages.Warning_FretUnderCapo,
                 this.string.value,
                 this.fret.value);
@@ -56,184 +57,165 @@ export class BeatNoteNode extends Node {
         element.effectTechniqueParameter = LiteralNode.valueOrUndefined(this.effectTechniqueParameter);
         element.accent = LiteralNode.valueOrDefault(this.accent, NoteAccent.Normal);
 
-        if (!this.validate(context, logger, voicePart, element))
-            return undefined;
+        const validateResult = this.validate(context, voicePart, element);
+        if (!ParseHelper.isSuccessful(validateResult))
+            return helper.relayFailure(validateResult);
 
-        return element;
+        return helper.success(element);
     }
 
-    private validate(context: DocumentContext, logger: ILogger, voicePart: VoicePart, element: BeatNote): boolean {
-        if (!this.validateTie(context, logger, element))
-            return false;
-
-        if (!this.validatePreConnection(context, logger, voicePart, element))
-            return false;
-
-        if (!this.validatePostConnection(context, logger, voicePart, element))
-            return false;
-        return true;
+    private validate(context: DocumentContext, voicePart: VoicePart, element: BeatNote): ParseResult<void> {
+        const validateTieResult = this.validateTie(context, element);
+        if (!ParseHelper.isSuccessful(validateTieResult))
+            return ParseHelper.relayFailure(validateTieResult);
+        const validatePreConnectionResult = this.validatePreConnection(context, voicePart, element);
+        if (!ParseHelper.isSuccessful(validatePreConnectionResult))
+            return ParseHelper.relayFailure(validatePreConnectionResult);
+        const validatePostConnectionResult = this.validatePostConnection(context, voicePart, element);
+        if (!ParseHelper.isSuccessful(validatePostConnectionResult))
+            return ParseHelper.relayFailure(validatePostConnectionResult);
+        return ParseHelper.voidSuccess;
     }
 
-    private validateTie(context: DocumentContext, logger: ILogger, element: BeatNote): boolean {
+    private validateTie(context: DocumentContext, element: BeatNote): ParseResult<void> {
+
+        const helper = new ParseHelper();
+
         if (this.tie === undefined)
-            return true;
+            return helper.success(undefined);
 
-        if (!this.retrievePreConnectedNote(context, logger, element))
-            return false;
+        const retrievePreConnectedNoteResult = this.retrievePreConnectedNote(context, element);
+        if (!ParseHelper.isSuccessful(retrievePreConnectedNoteResult)) {
+            return helper.relayFailure(retrievePreConnectedNoteResult);
+        }
 
         if (this.fret === undefined)
             element.fret = element.preConnectedNote.fret;
         else if (this.fret.value !== element.preConnectedNote.fret) {
-            logger.report(LogLevel.Warning,
-                this.fret.range,
-                Messages.Warning_TiedNoteMismatch);
+            helper.warning(this.fret.range, Messages.Warning_TiedNoteMismatch);
 
             element.preConnection = NoteConnection.None;
         }
 
-        return true;
+        return helper.success(undefined);
     }
 
-    private retrievePreConnectedNote(context: DocumentContext, logger: ILogger, element: BeatNote): boolean {
+    private retrievePreConnectedNote(context: DocumentContext, element: BeatNote): ParseResult<void> {
         const tablatureContext = context as TablatureContext;
         const lastNote = tablatureContext.getLastNoteOnString(this.string.value - 1);
 
         if (lastNote === undefined) {
-            logger.report(LogLevel.Error,
-                this.preConnection!.range,
-                Messages.Error_ConnectionPredecessorNotExisted);
-
-            return false;
+            return ParseHelper.fail(this.preConnection!.range, Messages.Error_ConnectionPredecessorNotExisted);
         }
 
         element.preConnectedNote = lastNote;
-        return true;
+        return ParseHelper.voidSuccess;
     }
 
     private validatePreConnection(context: DocumentContext,
-        logger: ILogger,
         voicePart: VoicePart,
-        element: BeatNote): boolean {
+        element: BeatNote): ParseResult<void> {
+
+        const helper = new ParseHelper();
 
         if (this.preConnection === undefined || this.preConnection.value === NoteConnection.None)
-            return true;
+            return helper.success(undefined);
 
         let tablatureState = context.documentState as TablatureState;
 
         if (this.preConnection.value === NoteConnection.SlideInFromHigher
             || this.preConnection.value === NoteConnection.SlideInFromLower) {
             if (this.fret === undefined) {
-                logger.report(LogLevel.Error,
-                    this.preConnection.range,
-                    Messages.Error_FretMissingForSlideInNote);
-
-                return false;
+                helper.fail(this.preConnection.range, Messages.Error_FretMissingForSlideInNote);
             }
 
             if (this.preConnection.value === NoteConnection.SlideInFromLower
                 && this.fret.value <= tablatureState.getCapoFretOffset(this.string.value - 1)) {
-                logger.report(LogLevel.Warning,
-                    this.fret.range,
-                    Messages.Warning_FretTooLowForSlideInNote);
+                helper.warning(this.fret.range, Messages.Warning_FretTooLowForSlideInNote);
 
                 element.preConnection = NoteConnection.None;
             }
 
-            return true;
+            return helper.success(undefined);
         }
-
-        if (!this.retrievePreConnectedNote(context, logger, element))
-            return false;
+        const retrievePreConnectedNoteResult = this.retrievePreConnectedNote(context, element);
+        if (!ParseHelper.isSuccessful(retrievePreConnectedNoteResult)) {
+            return helper.relayFailure(retrievePreConnectedNoteResult);
+        }
 
         switch (this.preConnection.value) {
             case NoteConnection.Slide:
                 if (this.fret === undefined) {
-                    logger.report(LogLevel.Error,
-                        this.preConnection.range,
+                    helper.fail(this.preConnection.range,
                         Messages.Error_FretMissingForSlideNote);
-                    return false;
                 }
                 if (this.fret.value === element.preConnectedNote.fret) {
-                    logger.report(LogLevel.Warning,
-                        this.preConnection.range,
+                    helper.warning(this.preConnection.range,
                         Messages.Warning_SlidingToSameFret);
                     element.preConnection = NoteConnection.None;
                 }
-                return true;
+                return helper.success(undefined);
             case NoteConnection.Hammer:
                 if (this.fret === undefined) {
-                    logger.report(LogLevel.Error,
-                        this.preConnection.range,
+                    helper.fail(this.preConnection.range,
                         Messages.Error_FretMissingForHammerNote);
-                    return false;
                 }
 
                 if (this.fret.value === element.preConnectedNote.fret) {
-                    logger.report(LogLevel.Warning,
-                        this.fret.range,
+                    helper.warning(this.fret.range,
                         Messages.Warning_HammeringToSameFret);
                     element.preConnection = NoteConnection.None;
                 } else if (this.fret.value < element.preConnectedNote.fret) {
-                    logger.report(LogLevel.Warning,
-                        this.fret.range,
+                    helper.warning(this.fret.range,
                         Messages.Warning_HammeringFromHigherFret);
                     element.preConnection = NoteConnection.Pull;
                 }
-                return true;
+                return helper.success(undefined);
             case NoteConnection.Pull:
                 if (this.fret === undefined) {
-                    logger.report(LogLevel.Error,
-                        this.preConnection.range,
-                        Messages.Error_FretMissingForPullNote);
-                    return false;
+                    return helper.fail(this.preConnection.range, Messages.Error_FretMissingForPullNote);
                 }
 
                 if (this.fret.value === element.preConnectedNote.fret) {
-                    logger.report(LogLevel.Warning,
-                        this.fret.range,
-                        Messages.Warning_PullingToSameFret);
+                    helper.warning(this.fret.range, Messages.Warning_PullingToSameFret);
                     element.preConnection = NoteConnection.None;
                 } else if (this.fret.value > element.preConnectedNote.fret) {
-                    logger.report(LogLevel.Warning,
-                        this.fret.range,
-                        Messages.Warning_PullingFromLowerFret);
+                    helper.warning(this.fret.range, Messages.Warning_PullingFromLowerFret);
                     element.preConnection = NoteConnection.Hammer;
                 }
-                return true;
+                return helper.success(undefined);
             default:
                 throw new RangeError();
         }
     }
 
     private validatePostConnection(context: DocumentContext,
-        logger: ILogger,
         voicePart: VoicePart,
-        element: BeatNote): boolean {
+        element: BeatNote): ParseResult<void> {
 
-        if (this.postConnection === undefined || this.postConnection.value === NoteConnection.None)
-            return true;
+        const helper = new ParseHelper();
+
+        if (this.postConnection === undefined || this.postConnection.value === NoteConnection.None) {
+            return helper.success(undefined);
+        }
+
 
         const tablatureState = context.documentState as TablatureState;
 
         if (this.postConnection.value === NoteConnection.SlideOutToHigher
             || this.postConnection.value === NoteConnection.SlideOutToLower) {
             if (this.fret === undefined) {
-                logger.report(LogLevel.Error,
-                    this.preConnection!.range,
-                    Messages.Error_FretMissingForSlideOutNote);
-                return false;
+                return helper.fail(this.preConnection!.range, Messages.Error_FretMissingForSlideOutNote);
             }
 
             if (this.postConnection.value === NoteConnection.SlideOutToLower
                 && this.fret.value <= tablatureState.getCapoFretOffset(this.string.value - 1)) {
-                logger.report(LogLevel.Warning,
-                    this.fret.range,
-                    Messages.Warning_FretTooLowForSlideOutNote);
+                helper.warning(this.fret.range, Messages.Warning_FretTooLowForSlideOutNote);
                 element.postConnection = NoteConnection.None;
             }
         }
 
-        return true;
+        return helper.success(undefined);
     }
 
     valueEquals(other: BeatNote): boolean {
@@ -273,25 +255,27 @@ export class BeatNoteNode extends Node {
 }
 
 export module BeatNoteNode {
-    export function parse(scanner: Scanner): IParseResult<BeatNoteNode> {
+    export function parse(scanner: Scanner): ParseResult<BeatNoteNode> {
         const anchor = scanner.makeAnchor();
         const helper = new ParseHelper();
         const node = new BeatNoteNode();
 
         // read tie
         const tie = helper.absorb(LiteralParsers.readTie(scanner));
-        if (tie.value) {
+        if (ParseHelper.isSuccessful(tie)) {
             node.tie = tie.value.tie;
             node.tiePosition = tie.value.tiePosition;
         }
-        const isTied = !!tie.value;
+        const isTied = !!node.tie;
 
         // read pre-connection
         const preConnection = helper.absorb(LiteralParsers.readPreNoteConnection(scanner));
-        if (isTied && ParseHelper.isSuccessful(preConnection)) {
-            helper.warning(scanner.lastReadRange, Messages.Warning_PreConnectionInTiedNote);
-        } else {
-            node.preConnection = preConnection.value;
+        if (ParseHelper.isSuccessful(preConnection)) {
+            if (isTied) {
+                helper.warning(scanner.lastReadRange, Messages.Warning_PreConnectionInTiedNote);
+            } else {
+                node.preConnection = preConnection.value;
+            }
         }
 
         // read ghost note
@@ -357,8 +341,8 @@ export module BeatNoteNode {
                 node.effectTechnique
                     = new LiteralNode<NoteEffectTechnique>(NoteEffectTechnique.ArtificialHarmonic, artificialHarmonicAnchor.range);
                 node.effectTechniqueParameter = ParseHelper.isSuccessful(artificialHarmonicFret)
-                    ? undefined
-                    : new LiteralNode<number>(artificialHarmonicFret.value!.value, artificialHarmonicFret.value!.range);
+                    ? new LiteralNode<number>(artificialHarmonicFret.value.value, artificialHarmonicFret.value.range)
+                    : undefined;
             }
         }
 
@@ -391,7 +375,7 @@ export module BeatNoteNode {
         if (ParseHelper.isSuccessful(postNoteConnection)) {
             node.postConnection = postNoteConnection.value;
         }
-        
+
         node.range = anchor.range;
 
         return helper.success(node);

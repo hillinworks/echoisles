@@ -1,15 +1,13 @@
 ﻿import { DirectiveNode } from "../DirectiveNode";
 import { LiteralNode } from "../LiteralNode";
 import { DocumentContext } from "../../DocumentContext";
-import { ILogger } from "../../../Core/Logging/ILogger";
 import { Capo } from "../../../Core/Sheet/Tablature/Capo";
-import { LogLevel } from "../../../Core/Logging/LogLevel";
 import { Messages } from "../../Messages";
 import { CapoInfo } from "../../../Core/MusicTheory/String/Plucked/CapoInfo";
 import { TablatureState } from "../../../Core/Sheet/Tablature/TablatureState";
 import { CapoStringsSpecifierNode } from "./CapoStringsSpecifierNode";
 import { Scanner } from "../../Scanner";
-import { IParseResult, ParseHelper } from "../../ParseResult";
+import { ParseResult, ParseResultMaybeEmpty, ParseHelper } from "../../ParseResult";
 import { LiteralParsers } from "../../LiteralParsers";
 import { TextRange } from "../../../Core/Parsing/TextRange";
 import { Defaults } from "../../../Core/Sheet/Tablature/Defaults";
@@ -24,26 +22,26 @@ export class CapoDirectiveNode extends DirectiveNode {
         super(range);
     }
 
-    apply(context: DocumentContext, logger: ILogger): boolean {
-        const result = this.toDocumentElement(context, logger);
+    apply(context: DocumentContext): ParseResultMaybeEmpty<void> {
+        const result = this.compile(context);
 
-        if (!result) {
-            return false;
+        if (!ParseHelper.isSuccessful(result)) {
+            return ParseHelper.relayFailure(result);
         }
 
         context.alterDocumentState(state => {
             const tablatureState = state as TablatureState;
-            tablatureState.capos.add(result!);
-            tablatureState.capoFretOffsets = result.offsetFrets(tablatureState.capoFretOffsets);
+            tablatureState.capos.add(result.value);
+            tablatureState.capoFretOffsets = result.value.offsetFrets(tablatureState.capoFretOffsets);
         });
 
-        return true;
+        return ParseHelper.voidSuccess;
     }
 
-    private toDocumentElement(context: DocumentContext, logger: ILogger): Capo | undefined {
+    private compile(context: DocumentContext): ParseResult<Capo> {
+        const helper = new ParseHelper();
         if (context.documentState.barAppeared) {
-            logger.report(LogLevel.Error, this.range, Messages.Error_CapoInstructionAfterBarAppeared);
-            return undefined;
+            return helper.fail(this.range, Messages.Error_CapoInstructionAfterBarAppeared);
         }
 
         const element = new Capo();
@@ -51,13 +49,13 @@ export class CapoDirectiveNode extends DirectiveNode {
         element.capoInfo = new CapoInfo(this.position.value,
             this.stringsSpecifier === undefined ? CapoInfo.affectAllStrings : this.stringsSpecifier.stringNumbers);
 
-        return element;
+        return helper.success(element);
     }
 }
 
 export module CapoDirectiveNode {
 
-    export function parseBody(scanner: Scanner): IParseResult<CapoDirectiveNode> {
+    export function parseBody(scanner: Scanner): ParseResult<CapoDirectiveNode> {
         const node = new CapoDirectiveNode();
         const helper = new ParseHelper();
 
@@ -68,7 +66,7 @@ export module CapoDirectiveNode {
             return helper.fail(scanner.lastReadRange, Messages.Error_InvalidCapoPosition);
         }
 
-        if (position.value!.value > Defaults.highestCapo) {
+        if (position.value.value > Defaults.highestCapo) {
             helper.warning(scanner.lastReadRange, Messages.Warning_CapoTooHigh);
         }
 
@@ -79,7 +77,7 @@ export module CapoDirectiveNode {
         if (scanner.peek() === "(") {
 
             const stringsSpecifier = CapoStringsSpecifierNodeParser.parse(scanner);
-            if (ParseHelper.isSuccessful(stringsSpecifier)) {
+            if (!ParseHelper.isSuccessful(stringsSpecifier)) {
                 return helper.relayFailure(stringsSpecifier);
             }
 

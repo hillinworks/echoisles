@@ -1,12 +1,10 @@
 ﻿import { Node } from "./Node";
 import { DocumentContext } from "../DocumentContext";
-import { ILogger } from "../../Core/Logging/ILogger";
 import { RhythmSegmentNode } from "./RhythmSegmentNode";
 import { Rhythm } from "../../Core/Sheet/Rhythm";
 import { PreciseDuration } from "../../Core/MusicTheory/PreciseDuration";
-import { LogLevel } from "../../Core/Logging/LogLevel";
 import { Scanner } from "../Scanner";
-import { IParseResult, ParseHelper } from "../ParseResult";
+import { ParseResult, ParseHelper } from "../ParseResult";
 import { Messages } from "../Messages";
 import { TextRange } from "../../Core/Parsing/TextRange";
 
@@ -17,29 +15,30 @@ export class RhythmNode extends Node {
         super(range);
     }
 
-    toDocumentElement(context: DocumentContext, logger: ILogger): Rhythm | undefined {
+    compile(context: DocumentContext): ParseResult<Rhythm> {
+        const helper = new ParseHelper();
         const rhythm = new Rhythm();
         rhythm.range = this.range;
 
         let duration = PreciseDuration.zero;
 
         for (let segment of this.segments) {
-            const result = segment.toDocumentElement(context, logger);
-            if (!result) {
-                return undefined;
+            const result = segment.compile(context);
+            if (!ParseHelper.isSuccessful(result)) {
+                return helper.relayFailure(result);
             }
 
-            rhythm.segments.push(result!);
+            rhythm.segments.push(result.value);
             duration = duration.add(segment.duration);
         }
 
         // duration could be 0 if rhythm is not defined (only chord defined), rhythm will be determined by the rhythm instruction
         if (duration.compareTo(0) > 0 && duration.equals(context.documentState.time.duration)) {
-            logger.report(LogLevel.Warning, this.range, Messages.Warning_BeatsNotMatchingTimeSignature);
+            helper.warning(this.range, Messages.Warning_BeatsNotMatchingTimeSignature);
             rhythm.notMatchingTime = true;
         }
 
-        return rhythm;
+        return helper.success(rhythm);
     }
 }
 
@@ -49,7 +48,7 @@ export module RhythmNode {
         return scanner.peekChar() === "@";
     }
 
-    export function parse(scanner: Scanner, endOfBarPredicate: Scanner.Predicate): IParseResult<RhythmNode> {
+    export function parse(scanner: Scanner, endOfBarPredicate: Scanner.Predicate): ParseResult<RhythmNode> {
         const node = new RhythmNode();
 
         scanner.skipWhitespaces();
@@ -59,10 +58,10 @@ export module RhythmNode {
         while (!isEndOfRhythm(scanner) && !endOfBarPredicate(scanner)) {
             const segment = RhythmSegmentNode.parse(scanner);
             if (!ParseHelper.isSuccessful(segment)) {
-                return ParseHelper.relayState(segment);
+                return ParseHelper.relayFailure(segment);
             }
 
-            node.segments.push(segment.value!);
+            node.segments.push(segment.value);
             scanner.skipWhitespaces(false);
         }
 

@@ -6,9 +6,9 @@ import { TuningSignature } from "../TuningSignature";
 import { RhythmTemplate } from "../RhythmTemplate";
 import { min, firstOrUndefined } from "../../Utilities/LinqLite";
 import { ChordLibrary } from "./ChordLibrary";
-import {IChordDefinition} from "./IChordDefinition";
-import {Chord} from "./Chord";
-import {InlineChordDefinition} from "./InlineChordDefinition";
+import { IChordDefinition } from "./IChordDefinition";
+import { Chord } from "./Chord";
+import { InlineChordDefinition } from "./InlineChordDefinition";
 
 export class TablatureState extends DocumentState {
 
@@ -90,11 +90,17 @@ export class TablatureState extends DocumentState {
         this.definedChords.seal();
     }
 
+    protected instantializeClone(): DocumentState {
+        return new TablatureState();
+    }
+
     protected cloneProperties(state: DocumentState) {
         super.cloneProperties(state);
         const tablatureState = state as TablatureState;
         tablatureState.capos.appendClone(this.capos);
-        tablatureState._capoFretOffsets = [...this._capoFretOffsets];
+        if (this._capoFretOffsets) {
+            tablatureState._capoFretOffsets = [...this._capoFretOffsets];
+        }
         tablatureState._minimumCapoFret = this._minimumCapoFret;
         tablatureState.definedChords.appendClone(this.definedChords);
         tablatureState._tuningSignature = this._tuningSignature;

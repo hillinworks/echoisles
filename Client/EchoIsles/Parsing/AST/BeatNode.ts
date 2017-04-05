@@ -10,14 +10,12 @@ import { NoteRepetition } from "../../Core/MusicTheory/NoteRepetition";
 import { HoldAndPause } from "../../Core/MusicTheory/HoldAndPause";
 import { BeatAccent } from "../../Core/MusicTheory/BeatAccent";
 import { DocumentContext } from "../DocumentContext";
-import { ILogger } from "../../Core/Logging/ILogger";
 import { Beat } from "../../Core/Sheet/Beat";
 import { RhythmSegmentVoice } from "../../Core/Sheet/RhythmSegmentVoice";
-import { LogLevel } from "../../Core/Logging/LogLevel";
 import { Messages } from "../Messages";
 import { BeatNoteNode } from "./BeatNoteNode";
 import { Scanner } from "../Scanner";
-import { IParseResult, ParseHelper, ParseResultType } from "../ParseResult";
+import { ParseResult, ParseResultMaybeEmpty, ParseHelper, ParseResultType } from "../ParseResult";
 import { LiteralParsers } from "../LiteralParsers";
 import { TextRange } from "../../Core/Parsing/TextRange";
 import { all } from "../../Core/Utilities/LinqLite";
@@ -71,7 +69,7 @@ export class BeatNode extends Node {
             || this.accent !== undefined;
     }
 
-    toDocumentElement(context: DocumentContext, logger: ILogger, ownerVoice: RhythmSegmentVoice): Beat | undefined {
+    compile(context: DocumentContext, ownerVoice: RhythmSegmentVoice): ParseResult<Beat> {
         const beat = new Beat();
         beat.range = this.range;
         beat.strumTechnique = LiteralNode.valueOrDefault(this.strumTechnique,
@@ -91,44 +89,44 @@ export class BeatNode extends Node {
         beat.isForceBeamStart = this.forceBeamStart != null;
         beat.isForceBeamEnd = this.forceBeamEnd != null;
 
-        if (!this.validate(context, logger, beat)) {
-            return undefined;
+        let validateResult = this.validate(context, beat);
+        if (!ParseHelper.isSuccessful(validateResult)) {
+            return ParseHelper.relayFailure(validateResult);
         }
 
         for (let note of this.notes) {
-            const result = note.toDocumentElement(context, logger, ownerVoice.part);
-            if (!result) {
-                return undefined;
+            const result = note.compile(context, ownerVoice.part);
+            if (!ParseHelper.isSuccessful(result)) {
+                return ParseHelper.relayFailure(result);
             }
 
-            result.ownerBeat = beat;
-            beat.notes.push(result!);
-            ownerVoice.lastNoteOnStrings[result.string] = result;
+            const resultNote = result.value;
+            resultNote.ownerBeat = beat;
+            beat.notes.push(resultNote);
+            ownerVoice.lastNoteOnStrings[resultNote.string] = resultNote;
         }
 
         ownerVoice.isTerminatedWithRest = beat.isRest;
 
-        return beat;
+        return ParseHelper.success(beat);
     }
 
-    private validate(context: DocumentContext, logger: ILogger, beat: Beat): boolean {
+    private validate(context: DocumentContext, beat: Beat): ParseResult<void> {
+        const helper = new ParseHelper();
+
         if (beat.strumTechnique !== StrumTechnique.None
             && this.strumTechnique !== undefined) { // strum technique === undefined means we are derived from a template
 
             if (beat.isTied) {
-                logger.report(LogLevel.Warning, this.strumTechnique.range,
-                    Messages.Warning_StrumTechniqueForTiedBeat);
-
+                helper.warning(this.strumTechnique.range, Messages.Warning_StrumTechniqueForTiedBeat);
                 beat.strumTechnique = StrumTechnique.None;
             } else if (beat.isRest) {
-                logger.report(LogLevel.Warning, this.strumTechnique.range,
-                    Messages.Warning_StrumTechniqueForRestBeat);
-
+                helper.warning(this.strumTechnique.range, Messages.Warning_StrumTechniqueForRestBeat);
                 beat.strumTechnique = StrumTechnique.None;
             }
         }
 
-        return true;
+        return helper.success(undefined);
     }
 
     valueEquals(other: Beat): boolean {
@@ -206,7 +204,7 @@ export class BeatNode extends Node {
 
 export module BeatNode {
 
-    function readNotes(scanner: Scanner): IParseResult<BeatNoteNode[]> {
+    function readNotes(scanner: Scanner): ParseResultMaybeEmpty<BeatNoteNode[]> {
         if (!scanner.expectChar("("))
             return ParseHelper.empty();
 
@@ -217,11 +215,11 @@ export module BeatNode {
         let parenthesisClosed = false;
         while (!scanner.isEndOfLine) {
             const note = BeatNoteNode.parse(scanner);
-            if (!ParseHelper.isSuccessful(note)) {
+            if (ParseHelper.isSuccessful(note)) {
+                notes.push(note.value);
+            } else {
                 return ParseHelper.relayState(note);
             }
-
-            notes.push(note.value!);
 
             if (!scanner.skipOptional(",", true)) {
                 if (scanner.expectChar(")")) {
@@ -239,7 +237,7 @@ export module BeatNode {
         return ParseHelper.success(notes);
     }
 
-    function readModifier(scanner: Scanner, node: BeatNode): IParseResult<void> {
+    function readModifier(scanner: Scanner, node: BeatNode): ParseResult<void> {
 
         const helper = new ParseHelper();
 
@@ -303,7 +301,7 @@ export module BeatNode {
     }
 
 
-    export function parse(scanner: Scanner): IParseResult<BeatNode> {
+    export function parse(scanner: Scanner): ParseResult<BeatNode> {
         const anchor = scanner.makeAnchor();
         const helper = new ParseHelper();
         const node = new BeatNode();
@@ -311,58 +309,65 @@ export module BeatNode {
         // read tie
         const tie = helper.absorb(LiteralParsers.readTie(scanner));
         if (ParseHelper.isSuccessful(tie)) {
-            node.tie = tie.value!.tie;
+            node.tie = tie.value.tie;
             node.tiePosition = tie.value!.tiePosition;
         }
-        let isTied = !!tie.value;
+        let isTied = !!node.tie;
 
         // read pre-connection
         const preConnection = helper.absorb(LiteralParsers.readPreBeatConnection(scanner));
-        if (isTied && ParseHelper.isSuccessful(preConnection)) {
-            helper.warning(scanner.lastReadRange, Messages.Warning_PreConnectionInTiedBeat);
-        } else {
-            node.preConnection = preConnection.value;
+        if (ParseHelper.isSuccessful(preConnection)) {
+            if (isTied) {
+                helper.warning(scanner.lastReadRange, Messages.Warning_PreConnectionInTiedBeat);
+            } else {
+                node.preConnection = preConnection.value;
+            }
         }
 
         // read note value
         const noteValue = NoteValueNode.parse(scanner);
-        if (noteValue.result === ParseResultType.Failed) {
+        if (ParseHelper.isSuccessful(noteValue)) {
+            node.noteValue = noteValue.value;
+        } else if (noteValue.result === ParseResultType.Failed) {
             return helper.fail(); // todo: message?
         }
-        node.noteValue = noteValue.value!;
 
         const postNoteValueAnchor = scanner.makeAnchor();
 
         // read rest
-        node.rest = helper.absorb(ExistencyNode.parseCharExistency(scanner, "r")).value;
+        const rest = helper.absorb(ExistencyNode.parseCharExistency(scanner, "r"));
+        if (ParseHelper.isSuccessful(rest)) {
+            node.rest = rest.value;
+        }
 
         scanner.skipWhitespaces();
 
         const postRestAnchor = scanner.makeAnchor();
 
         // read notes
-        const notes = readNotes(scanner);
-        if (notes.result === ParseResultType.Failed) {
-            return helper.relayFailure(notes);
-        }
+        const readNotesResult = readNotes(scanner);
 
-        if (notes.value) {
-            node.notes.push(...notes.value);
+        if (ParseHelper.isSuccessful(readNotesResult)) {
+            node.notes.push(...readNotesResult.value);
+        } else if (readNotesResult.result === ParseResultType.Failed) {
+            return helper.relayFailure(readNotesResult);
         }
 
         // all notes are tied, which is equal to the beat being tied
         isTied = isTied || all(node.notes, n => !!n.tie);
 
-        const noteValueIndetermined = !noteValue.value;
+        const noteValueIndetermined = !node.noteValue;
 
         // certain strum techniques (head strum techniques) can be placed before the colon token
         const chordStrumTechnique = LiteralParsers.readChordStrumTechnique(scanner);
 
-        if (noteValueIndetermined && notes.value!.length === 0 && !ParseHelper.isSuccessful(chordStrumTechnique)) {
-            return helper.fail(scanner.lastReadRange, Messages.Error_BeatBodyExpected);
+        if (ParseHelper.isSuccessful(chordStrumTechnique)) {
+            node.chordStrumTechnique = chordStrumTechnique.value;
+        } else {
+            if (noteValueIndetermined && node.notes.length === 0) {
+                return helper.fail(scanner.lastReadRange, Messages.Error_BeatBodyExpected);
+            }
         }
-
-        node.chordStrumTechnique = chordStrumTechnique.value;
 
         scanner.skipWhitespaces();
 
@@ -371,9 +376,9 @@ export module BeatNode {
             scanner.skipWhitespaces();
 
             do {
-                const modifier = readModifier(scanner, node);
-                if (modifier.result === ParseResultType.Failed) {
-                    return helper.relayFailure(modifier);
+                const readModifierResult = readModifier(scanner, node);
+                if (!ParseHelper.isSuccessful(readModifierResult)) {
+                    return helper.relayFailure(readModifierResult);
                 }
 
                 scanner.skipWhitespaces();
@@ -387,8 +392,10 @@ export module BeatNode {
 
         // read post-connection
         scanner.skipWhitespaces();
-
-        node.postConnection = helper.absorb(LiteralParsers.readPostBeatConnection(scanner)).value;
+        const postBeatConnection = helper.absorb(LiteralParsers.readPostBeatConnection(scanner));
+        if (ParseHelper.isSuccessful(postBeatConnection)) {
+            node.postConnection = postBeatConnection.value;
+        }
 
         // post-connection is not allowed for rest beat
         if (node.rest && node.hasRedundantSpecifierForRest) {

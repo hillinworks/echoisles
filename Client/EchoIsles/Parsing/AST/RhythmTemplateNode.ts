@@ -2,9 +2,8 @@
 import { RhythmTemplateSegmentNode } from "./RhythmTemplateSegmentNode";
 import { RhythmTemplate } from "../../Core/Sheet/RhythmTemplate";
 import { DocumentContext } from "../DocumentContext";
-import { ILogger } from "../../Core/Logging/ILogger";
 import { Scanner } from "../Scanner";
-import { IParseResult, ParseHelper } from "../ParseResult";
+import { ParseResult, ParseHelper } from "../ParseResult";
 import { TextRange } from "../../Core/Parsing/TextRange";
 
 export class RhythmTemplateNode extends Node {
@@ -14,19 +13,20 @@ export class RhythmTemplateNode extends Node {
         super(range);
     }
 
-    toDocumentElement(context: DocumentContext, logger: ILogger): RhythmTemplate | undefined {
+    compile(context: DocumentContext): ParseResult<RhythmTemplate> {
         const element = new RhythmTemplate();
         element.range = this.range;
 
         for (let segment of this.segments) {
-            const result = segment.toDocumentElement(context, logger);
-            if (!result)
-                return undefined;
+            const result = segment.compile(context);
+            if (!ParseHelper.isSuccessful(result)) {
+                return ParseHelper.relayFailure(result);
+            }
 
-            element.segments.push(result!);
+            element.segments.push(result.value);
         }
 
-        return element;
+        return ParseHelper.success(element);
     }
 
     valueEquals(other: RhythmTemplate) {
@@ -47,7 +47,7 @@ export class RhythmTemplateNode extends Node {
 
 export module RhythmTemplateNode {
 
-    export function parse(scanner: Scanner): IParseResult<RhythmTemplateNode> {
+    export function parse(scanner: Scanner): ParseResult<RhythmTemplateNode> {
         const node = new RhythmTemplateNode();
 
         scanner.skipWhitespaces();
@@ -57,7 +57,7 @@ export module RhythmTemplateNode {
         if (scanner.peekChar() !== "[") { // handle optional brackets
             const segment = RhythmTemplateSegmentNode.parse(scanner, true);
             if (!ParseHelper.isSuccessful(segment)) {
-                return ParseHelper.relayState(segment);
+                return ParseHelper.relayFailure(segment);
             }
 
             node.segments.push(segment.value!);
@@ -68,7 +68,7 @@ export module RhythmTemplateNode {
         while (!scanner.isEndOfLine) {
             const segment = RhythmTemplateSegmentNode.parse(scanner, false);
             if (!ParseHelper.isSuccessful(segment)) {
-                return ParseHelper.relayState(segment);
+                return ParseHelper.relayFailure(segment);
             }
 
             node.segments.push(segment.value!);

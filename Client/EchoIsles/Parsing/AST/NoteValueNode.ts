@@ -4,7 +4,7 @@ import { LiteralNode } from "./LiteralNode";
 import { NoteValueAugment } from "../../Core/MusicTheory/NoteValueAugment";
 import { NoteValue } from "../../Core/MusicTheory/NoteValue";
 import { Scanner } from "../Scanner";
-import { IParseResult, ParseHelper, ParseResultType } from "../ParseResult";
+import { ParseResult, ParseHelper, ParseResultType } from "../ParseResult";
 import { TextRange } from "../../Core/Parsing/TextRange";
 import { LiteralParsers } from "../LiteralParsers";
 import { Messages } from "../Messages";
@@ -26,7 +26,7 @@ export class NoteValueNode extends Node {
 }
 
 export module NoteValueNode {
-    export function parse(scanner: Scanner): IParseResult<NoteValueNode> {
+    export function parse(scanner: Scanner): ParseResult<NoteValueNode> {
         const anchor = scanner.makeAnchor();
         const node = new NoteValueNode();
         const helper = new ParseHelper();

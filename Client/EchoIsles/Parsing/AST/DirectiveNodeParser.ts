@@ -1,5 +1,5 @@
 ﻿import { Scanner } from "../Scanner";
-import { IParseResult, ParseHelper } from "../ParseResult";
+import { ParseResult, ParseHelper } from "../ParseResult";
 import { Messages } from "../Messages";
 import { CapoDirectiveNode } from "./Tablature/CapoDirectiveNode";
 import { ChordDirectiveNode } from "./Tablature/ChordDirectiveNode";
@@ -14,7 +14,7 @@ import { TuningDirectiveNode } from "./TuningDirectiveNode";
 import { DirectiveNode } from "./DirectiveNode";
 import { LiteralNode } from "./LiteralNode";
 
-const registeredParsers: { [key: string]: (scanner: Scanner) => IParseResult<DirectiveNode> } = {
+const registeredParsers: { [key: string]: (scanner: Scanner) => ParseResult<DirectiveNode> } = {
     "capo": CapoDirectiveNode.parseBody,
     "chord": ChordDirectiveNode.parseBody,
     "alternate": AlternateDirectiveNode.parseBody,
@@ -29,11 +29,11 @@ const registeredParsers: { [key: string]: (scanner: Scanner) => IParseResult<Dir
 
 export module DirectiveNodeParser {
 
-    export function registerParser(name: string, bodyParser: (scanner: Scanner) => IParseResult<DirectiveNode>) {
+    export function registerParser(name: string, bodyParser: (scanner: Scanner) => ParseResult<DirectiveNode>) {
         registeredParsers[name] = bodyParser;
     }
 
-    export function parse(scanner: Scanner): IParseResult<DirectiveNode> {
+    export function parse(scanner: Scanner): ParseResult<DirectiveNode> {
         const anchor = scanner.makeAnchor();
         const helper = new ParseHelper();
         if (!scanner.expectChar("+")) {
@@ -56,7 +56,7 @@ export module DirectiveNodeParser {
         const nameNode = LiteralNode.create(`+${name!}`, anchor.range);
 
         const result = bodyParser(scanner);
-        if (result.value) {
+        if (ParseHelper.isSuccessful(result)) {
             result.value.nameNode = nameNode;
             result.value.range = anchor.range;
         }

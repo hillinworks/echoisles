@@ -4,17 +4,17 @@ import { NoteNameNode } from "./NoteNameNode";
 import { Pitch, neutralOctaveGroup } from "../../Core/MusicTheory/Pitch";
 import { Scanner } from "../Scanner";
 import { LiteralParsers } from "../LiteralParsers";
-import { IParseResult, ParseHelper} from "../ParseResult";
+import { ParseResult, ParseHelper } from "../ParseResult";
 import { TextRange } from "../../Core/Parsing/TextRange";
 
 export class PitchNode extends Node {
 
-    static parse(scanner: Scanner): IParseResult<PitchNode> {
+    static parse(scanner: Scanner): ParseResult<PitchNode> {
         const anchor = scanner.makeAnchor();
 
         const noteName = NoteNameNode.parse(scanner);
         if (!ParseHelper.isSuccessful(noteName)) {
-            return ParseHelper.relayState(noteName);
+            return ParseHelper.relayFailure(noteName);
         }
 
         const octave = LiteralParsers.readInteger(scanner);
@@ -22,10 +22,8 @@ export class PitchNode extends Node {
         return ParseHelper.success(new PitchNode(anchor.range, noteName.value!, octave.value));
     }
 
-    noteName: NoteNameNode;
-    octaveGroup?: LiteralNode<number>;
 
-    constructor(range: TextRange, noteName: NoteNameNode, octaveGroup?: LiteralNode<number>) {
+    constructor(range: TextRange, readonly noteName: NoteNameNode, readonly octaveGroup?: LiteralNode<number>) {
         super(range);
         this.noteName = noteName;
         this.octaveGroup = octaveGroup;

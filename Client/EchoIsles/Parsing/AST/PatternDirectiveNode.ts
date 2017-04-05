@@ -1,13 +1,11 @@
 ﻿import { Node } from "./Node";
 import { DocumentContext } from "../DocumentContext";
-import { ILogger } from "../../Core/Logging/ILogger";
 import { BarNode } from "./BarNode";
 import { DirectiveNode } from "./DirectiveNode";
 import { Bar } from "../../Core/Sheet/Bar";
-import { LogLevel } from "../../Core/Logging/LogLevel";
 import { Messages } from "../Messages";
 import { Scanner } from "../Scanner";
-import { IParseResult, ParseHelper } from "../ParseResult";
+import { ParseResult, ParseResultMaybeEmpty, ParseHelper } from "../ParseResult";
 import { TextRange } from "../../Core/Parsing/TextRange";
 import { BarLine } from "../../Core/MusicTheory/BarLine";
 
@@ -27,30 +25,27 @@ export class PatternDirectiveNode extends DirectiveNode {
         super(range);
     }
 
-    apply(context: DocumentContext, logger: ILogger): boolean {
+    apply(context: DocumentContext): ParseResultMaybeEmpty<void> {
+        const helper = new ParseHelper();
         const templateBarNodes = this.templateBars.bars;
         const instanceBarNodes = this.instanceBars.bars;
 
         if (instanceBarNodes.length < templateBarNodes.length) {
-            logger.report(LogLevel.Warning,
-                this.instanceBars.range,
-                Messages.Warning_PatternInstanceBarsLessThanTemplateBars);
+            helper.warning(this.instanceBars.range, Messages.Warning_PatternInstanceBarsLessThanTemplateBars);
         }
 
         const templateBars = new Array<Bar>();
         for (let barNode of templateBarNodes) {
             if (barNode.lyrics != null) {
-                logger.report(LogLevel.Warning,
-                    barNode.lyrics.range,
-                    Messages.Warning_TemplateBarCannotContainLyrics);
+                helper.warning(barNode.lyrics.range, Messages.Warning_TemplateBarCannotContainLyrics);
             }
 
-            const result = barNode.toDocumentElement(context, logger, undefined);
-            if (!result) {
-                return false;
+            const result = barNode.compile(context, undefined);
+            if (!ParseHelper.isSuccessful(result)) {
+                return helper.relayFailure(result);
             }
 
-            templateBars.push(result!);
+            templateBars.push(result.value);
         }
 
         let templateIndex = 0;
@@ -60,10 +55,13 @@ export class PatternDirectiveNode extends DirectiveNode {
             if (!barNode) {
                 context.addBar(templateBar);
             } else {
-                const result = barNode.toDocumentElement(context, logger, templateBar);
-                if (result) {
-                    context.addBar(result);
+                const result = barNode.compile(context, templateBar);
+
+                if (!ParseHelper.isSuccessful(result)) {
+                    return helper.relayFailure(result);
                 }
+
+                context.addBar(result.value);
             }
 
             ++templateIndex;
@@ -73,13 +71,13 @@ export class PatternDirectiveNode extends DirectiveNode {
 
         }
 
-        return true;
+        return helper.success(undefined);
     }
 
 }
 
 export module PatternDirectiveNode {
-    export function parseBody(scanner: Scanner): IParseResult<PatternDirectiveNode> {
+    export function parseBody(scanner: Scanner): ParseResult<PatternDirectiveNode> {
 
         const node = new PatternDirectiveNode();
         const helper = new ParseHelper();

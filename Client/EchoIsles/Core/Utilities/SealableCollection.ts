@@ -21,7 +21,7 @@ export class SealableCollection<T> {
     }
 
     [Symbol.iterator](): Iterator<T> {
-        return this.storage.values();
+        return this.storage[Symbol.iterator]();
     }
 
     private checkSealed(): void {

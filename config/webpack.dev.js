@@ -7,7 +7,8 @@ const AddAssetHtmlPlugin = require('add-asset-html-webpack-plugin');
 const helpers = require('./helpers');
 
 module.exports = webpackMerge(commonConfig, {
-    devtool: 'cheap-module-source-map',
+    //devtool: 'cheap-module-source-map',
+    devtool: 'source-map',
     output: {
         filename: '[name].js',
     },
@@ -45,7 +46,8 @@ module.exports = webpackMerge(commonConfig, {
             },
             dllDir: path.join(__dirname, '../wwwroot', '/dist'),
             webpackConfig: webpackMergeDll(commonConfig, {
-                devtool: 'cheap-module-source-map',
+                //devtool: 'cheap-module-source-map',
+                devtool: 'source-map',
                 plugins: []
             })
         }),

@@ -1,11 +1,9 @@
 ﻿import { Node } from "./Node";
-import { ILogger } from "../../Core/Logging/ILogger";
 import { Lyrics } from "../../Core/Sheet/Lyrics";
 import { LyricsSegmentNode } from "./LyricsSegmentNode";
 import { DocumentContext } from "../DocumentContext";
 import { Scanner } from "../Scanner";
-import { IParseResult, ParseHelper } from "../ParseResult";
-import { assert } from "../../Core/Utilities/Debug";
+import { ParseResult, ParseHelper } from "../ParseResult";
 import { TextRange } from "../../Core/Parsing/TextRange";
 
 export class LyricsNode extends Node {
@@ -15,27 +13,27 @@ export class LyricsNode extends Node {
         super(range);
     }
 
-    toDocumentElement(context: DocumentContext, logger: ILogger): Lyrics | undefined {
+    compile(context: DocumentContext): ParseResult<Lyrics> {
         const lyrics = new Lyrics();
         lyrics.range = this.range;
 
         for (let segment of this.lyricsSegments) {
-            const result = segment.toDocumentElement(context, logger);
-            if (!result) {
-                return undefined;
+            const result = segment.compile(context);
+            if (!ParseHelper.isSuccessful(result)) {
+                return ParseHelper.relayFailure(result);
             }
 
-            lyrics.segments.push(result!);
+            lyrics.segments.push(result.value);
         };
 
-        return lyrics;
+        return ParseHelper.success(lyrics);
     }
 }
 
 export module LyricsNode {
 
 
-    export function parse(scanner: Scanner, endOfBarPredicate: Scanner.Predicate): IParseResult<LyricsNode> {
+    export function parse(scanner: Scanner, endOfBarPredicate: Scanner.Predicate): ParseResult<LyricsNode> {
         const anchor = scanner.makeAnchor();
         scanner.expectChar("@");
         scanner.skipWhitespaces();
@@ -47,9 +45,8 @@ export module LyricsNode {
         }
 
         while (!isEndOfLyrics(scanner)) {
-            const segment = LyricsSegmentNode.parse(scanner, isEndOfLyrics);
-            assert(ParseHelper.isSuccessful(segment), "LyricsSegmentNode.parse() should not return false");
-            node.lyricsSegments.push(segment.value!);
+            const segment = ParseHelper.assert(LyricsSegmentNode.parse(scanner, isEndOfLyrics));
+            node.lyricsSegments.push(segment.value);
         }
 
         for (let i = node.lyricsSegments.length - 1; i >= 0; --i) {

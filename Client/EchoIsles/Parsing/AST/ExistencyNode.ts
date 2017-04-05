@@ -2,7 +2,7 @@
 import { Scanner } from "../Scanner";
 
 import { TextRange } from "../../Core/Parsing/TextRange";
-import { IParseResult, ParseHelper } from "../ParseResult";
+import { ParseResult, ParseHelper } from "../ParseResult";
 
 export class ExistencyNode extends Node {
 
@@ -13,7 +13,7 @@ export class ExistencyNode extends Node {
 }
 
 export module ExistencyNode {
-    export function parseCharExistency(scanner: Scanner, char: string): IParseResult<ExistencyNode> {
+    export function parseCharExistency(scanner: Scanner, char: string): ParseResult<ExistencyNode> {
         if (scanner.expectChar(char)) {
             return ParseHelper.success(new ExistencyNode(scanner.lastReadRange));
         }

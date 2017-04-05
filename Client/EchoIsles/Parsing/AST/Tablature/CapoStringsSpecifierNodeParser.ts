@@ -1,5 +1,5 @@
 ﻿import { Scanner } from "../../Scanner";
-import { IParseResult, ParseHelper } from "../../ParseResult";
+import { ParseResult, ParseHelper } from "../../ParseResult";
 import { TextRange } from "../../../Core/Parsing/TextRange";
 import { Defaults } from "../../../Core/Sheet/Tablature/Defaults";
 import { Messages } from "../../Messages";
@@ -10,7 +10,7 @@ import { CapoStringsSpecifierNode } from "./CapoStringsSpecifierNode";
 import { any } from "../../../Core/Utilities/LinqLite";
 
 export module CapoStringsSpecifierNodeParser {
-    export function parse(scanner: Scanner): IParseResult<CapoStringsSpecifierNode> {
+    export function parse(scanner: Scanner): ParseResult<CapoStringsSpecifierNode> {
 
         const helper = new ParseHelper();
 

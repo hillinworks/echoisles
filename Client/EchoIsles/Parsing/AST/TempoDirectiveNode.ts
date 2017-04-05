@@ -1,41 +1,43 @@
-﻿import { ILogger } from "../../Core/Logging/ILogger";
-import { DirectiveNode } from "./DirectiveNode";
+﻿import { DirectiveNode } from "./DirectiveNode";
 import { LiteralNode } from "./LiteralNode";
 import { DocumentContext } from "../DocumentContext";
-import { LogLevel } from "../../Core/Logging/LogLevel";
 import { Messages } from "../Messages";
 import { TempoSignature } from "../../Core/Sheet/TempoSignature";
 import { Tempo } from "../../Core/MusicTheory/Tempo";
 import { BaseNoteValue } from "../../Core/MusicTheory/BaseNoteValue";
 import { Scanner } from "../Scanner";
-import { IParseResult, ParseHelper } from "../ParseResult";
+import { ParseResult, ParseResultMaybeEmpty, ParseHelper } from "../ParseResult";
 import { TextRange } from "../../Core/Parsing/TextRange";
 import { Defaults } from "../../Core/Sheet/Defaults";
 
 export class TempoDirectiveNode extends DirectiveNode {
+
     noteValue: LiteralNode<BaseNoteValue>;
     beats: LiteralNode<number>;
 
-    apply(context: DocumentContext, logger: ILogger): boolean {
-        const result = this.toDocumentElement(context, logger);
-        if (!result)
-            return false;
+    apply(context: DocumentContext): ParseResultMaybeEmpty<void> {
+        const result = this.compile(context);
+        if (!ParseHelper.isSuccessful(result)) {
+            return ParseHelper.relayState(result);
+        }
 
-        context.alterDocumentState(state => state.tempoSignature = result);
+        context.alterDocumentState(state => state.tempoSignature = result.value);
 
-        return true;
+        return ParseHelper.voidSuccess;
     }
 
-    private toDocumentElement(context: DocumentContext, logger: ILogger): TempoSignature | undefined {
+    private compile(context: DocumentContext): ParseResultMaybeEmpty<TempoSignature> {
+        const helper = new ParseHelper();
+
         if (this.valueEquals(context.documentState.tempoSignature)) {
-            logger.report(LogLevel.Suggestion, this.range, Messages.Suggestion_UselessTempoInstruction);
-            return undefined;
+            helper.suggestion(this.range, Messages.Suggestion_UselessTempoInstruction);
+            return ParseHelper.empty();
         }
 
         const element = new TempoSignature();
         element.range = this.range;
         element.tempo = new Tempo(this.beats.value, LiteralNode.valueOrDefault(this.noteValue, BaseNoteValue.Quater));
-        return element;
+        return ParseHelper.success(element);
     }
 
     valueEquals(other: TempoSignature): boolean {
@@ -55,7 +57,7 @@ export class TempoDirectiveNode extends DirectiveNode {
 }
 
 export module TempoDirectiveNode {
-    export function parseBody(scanner: Scanner): IParseResult<TempoDirectiveNode> {
+    export function parseBody(scanner: Scanner): ParseResult<TempoDirectiveNode> {
         scanner.skipOptional(":", true);
 
         const node = new TempoDirectiveNode();

@@ -3,7 +3,6 @@ import { BarLine } from "../../Core/MusicTheory/BarLine";
 import { LiteralNode } from "./LiteralNode";
 import { RhythmNode } from "./RhythmNode";
 import { LyricsNode } from "./LyricsNode";
-import { ILogger } from "../../Core/Logging/ILogger";
 import { DocumentContext } from "../DocumentContext";
 import { Bar } from "../../Core/Sheet/Bar";
 import { TablatureState } from "../../Core/Sheet/Tablature/TablatureState";
@@ -13,29 +12,30 @@ import { BarArranger } from "./BarArranger";
 import { VoicePart } from "../../Core/Sheet/VoicePart";
 import { BarColumn } from "../../Core/Sheet/BarColumn";
 import { StrumTechnique } from "../../Core/MusicTheory/String/Plucked/StrumTechnique";
-import { LogLevel } from "../../Core/Logging/LogLevel";
 import { Messages } from "../Messages";
 import { IBeatElementContainer } from "../../Core/Sheet/IBeatElementContainer";
 import { Scanner } from "../Scanner";
-import { IParseResult, ParseHelper } from "../ParseResult";
+import { ParseResult, ParseHelper } from "../ParseResult";
 import { LiteralParsers } from "../LiteralParsers";
 import { TextRange } from "../../Core/Parsing/TextRange";
 import { all, any } from "../../Core/Utilities/LinqLite";
 
-function applyRhythmTemplate(template: RhythmTemplate, rhythm: Rhythm, logger: ILogger): Rhythm {
+function applyRhythmTemplate(template: RhythmTemplate, rhythm: Rhythm): ParseResult<Rhythm> {
+
+    const helper = new ParseHelper();
 
     const templateInstance = template.instantialize();
 
     if (rhythm === undefined) {
-        return templateInstance;
+        return helper.success(templateInstance);
     }
 
     if (rhythm.segments.length === 0) { // empty rhythm, should be filled with rest
-        return rhythm;
+        return helper.success(rhythm);
     }
 
     if (any(rhythm.segments, s => s.firstVoice !== undefined)) { // rhythm already defined
-        return rhythm;
+        return helper.success(rhythm);
     }
 
     function copyVoices(): void {
@@ -46,15 +46,13 @@ function applyRhythmTemplate(template: RhythmTemplate, rhythm: Rhythm, logger: I
     }
 
     if (rhythm.segments.length > templateInstance.segments.length) {
-        logger.report(LogLevel.Warning, rhythm.range, Messages.Warning_TooManyChordsToMatchRhythmTemplate);
+        helper.warning(rhythm.range, Messages.Warning_TooManyChordsToMatchRhythmTemplate);
         copyVoices();
         for (let i = templateInstance.segments.length; i < rhythm.segments.length; ++i) {
             rhythm.segments[i].isOmittedByTemplate = true;
         }
     } else if (rhythm.segments.length < templateInstance.segments.length && rhythm.segments.length !== 1) {
-        logger.report(LogLevel.Warning,
-            rhythm.range,
-            Messages.Warning_InsufficientChordsToMatchRhythmTemplate);
+        helper.warning(rhythm.range, Messages.Warning_InsufficientChordsToMatchRhythmTemplate);
 
         const lastChord = rhythm.segments[rhythm.segments.length - 1].chord;
         copyVoices();
@@ -68,7 +66,7 @@ function applyRhythmTemplate(template: RhythmTemplate, rhythm: Rhythm, logger: I
         copyVoices();
     }
 
-    return rhythm;
+    return helper.success(rhythm);
 }
 
 function connectBars(previousBar: Bar, bar: Bar, voicePart: VoicePart): void {
@@ -95,7 +93,7 @@ export class BarNode extends TopLevelNode {
         super(range);
     }
 
-    toDocumentElement(context: DocumentContext, logger: ILogger, template: Bar | undefined): Bar | undefined {
+    compile(context: DocumentContext, template: Bar | undefined): ParseResult<Bar> {
         const bar = new Bar();
         bar.range = this.range;
         bar.openLine = LiteralNode.valueOrUndefined(this.openLine);
@@ -109,33 +107,39 @@ export class BarNode extends TopLevelNode {
                 bar.rhythm = template.rhythm.clone();
             }
         } else {
-            const result = this.rhythm.toDocumentElement(context, logger);
-            if (!result) {
-                return undefined;
+            const result = this.rhythm.compile(context);
+            if (!ParseHelper.isSuccessful(result)) {
+                return ParseHelper.relayFailure(result);
             }
 
-            bar.rhythm = result;
+            bar.rhythm = result.value;
         }
 
         const tablatureState = context.documentState as TablatureState;
-        bar.rhythm = applyRhythmTemplate(tablatureState.rhythmTemplate, bar.rhythm, logger);
+        const rhythm = applyRhythmTemplate(tablatureState.rhythmTemplate, bar.rhythm);
+        if (!ParseHelper.isSuccessful(rhythm)) {
+            return ParseHelper.relayFailure(rhythm);
+        }
+
+        bar.rhythm = rhythm.value;
 
         if (this.lyrics === undefined) {
             bar.lyrics = undefined;
         } else {
-            const result = this.lyrics.toDocumentElement(context, logger);
-            if (!result) {
-                return undefined;
+            const result = this.lyrics.compile(context);
+            if (!ParseHelper.isSuccessful(result)) {
+                return ParseHelper.relayFailure(result);
             }
 
-            bar.lyrics = result;
+            bar.lyrics = result.value;
         }
 
         new BarArranger(context, bar).arrange();
 
         for (let column of bar.columns) {
-            if (!this.validateColumn(context, logger, column)) {
-                return undefined;
+            const validateColumnResult = this.validateColumn(context, column);
+            if (!ParseHelper.isSuccessful(validateColumnResult)) {
+                return ParseHelper.relayFailure(validateColumnResult);
             }
         }
 
@@ -144,34 +148,35 @@ export class BarNode extends TopLevelNode {
             connectBars(previousBar, bar, VoicePart.Bass);
         }
 
-        return bar;
+        return ParseHelper.success(bar);
     }
 
-    private validateColumn(context: DocumentContext, logger: ILogger, column: BarColumn): boolean {
+    private validateColumn(context: DocumentContext, column: BarColumn): ParseResult<void> {
+
+        const helper = new ParseHelper();
+
         if (column.voiceBeats.length === 2
             && all(column.voiceBeats, b => b.strumTechnique !== StrumTechnique.None)) {
 
             if (column.voiceBeats[0].strumTechnique !== column.voiceBeats[1].strumTechnique) {
-                logger.report(LogLevel.Warning,
-                    column.voiceBeats[1].range,
-                    Messages.Warning_ConflictedStrumTechniques);
+                helper.warning(column.voiceBeats[1].range, Messages.Warning_ConflictedStrumTechniques);
 
                 column.voiceBeats[1].strumTechnique = StrumTechnique.None;
             }
         }
 
-        return true;
+        return helper.success(undefined);
     }
 }
 
 
 export module BarNode {
 
-    export function parse(scanner: Scanner, inBraces: boolean): IParseResult<BarNode> {
+    export function parse(scanner: Scanner, inBraces: boolean): ParseResult<BarNode> {
         const anchor = scanner.makeAnchor();
         const node = new BarNode();
 
-        node.openLine = LiteralParsers.readOpenBarLine(scanner).value;
+        node.openLine = ParseHelper.assertNotFailed(LiteralParsers.readOpenBarLine(scanner)).value;
 
         scanner.skipWhitespaces();
 

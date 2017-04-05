@@ -7,11 +7,11 @@ import { Scanner } from "../Scanner";
 import { LiteralParsers } from "../LiteralParsers";
 import { Messages } from "../Messages";
 import { TextRange } from "../../Core/Parsing/TextRange";
-import { IParseResult, ParseHelper, ParseResultType } from "../ParseResult";
+import { ParseResult, ParseHelper, ParseResultType } from "../ParseResult";
 
 export class NoteNameNode extends Node {
 
-    static parse(scanner: Scanner): IParseResult<NoteNameNode> {
+    static parse(scanner: Scanner): ParseResult<NoteNameNode> {
         const anchor = scanner.makeAnchor();
 
         const baseNoteName = LiteralParsers.readBaseNoteName(scanner);
@@ -20,25 +20,26 @@ export class NoteNameNode extends Node {
         }
 
         const accidental = LiteralParsers.readAccidental(scanner);
-        if (accidental.result === ParseResultType.Failed) {
+
+        let accidentalNode: LiteralNode<Accidental> | undefined = undefined;
+        if (ParseHelper.isSuccessful(accidental)) {
+            accidentalNode = accidental.value;
+        } else if (accidental.result === ParseResultType.Failed) {
             return ParseHelper.fail(scanner.lastReadRange, Messages.Error_InvalidAccidental);
         }
 
-        return ParseHelper.success(new NoteNameNode(anchor.range, baseNoteName.value!, accidental.value!));
+        return ParseHelper.success(new NoteNameNode(anchor.range, baseNoteName.value!, accidentalNode));
     }
 
-    baseNoteName: LiteralNode<BaseNoteName>;
-    accidental: LiteralNode<Accidental>;
-
     constructor(range: TextRange,
-        baseNoteName: LiteralNode<BaseNoteName>,
-        accidental: LiteralNode<Accidental>) {
+        readonly baseNoteName: LiteralNode<BaseNoteName>,
+        readonly accidental?: LiteralNode<Accidental>) {
         super(range);
         this.baseNoteName = baseNoteName;
         this.accidental = accidental;
     }
 
     toNoteName(): NoteName {
-        return new NoteName(this.baseNoteName.value, this.accidental.value);
+        return new NoteName(this.baseNoteName.value, LiteralNode.valueOrDefault(this.accidental, Accidental.Natural));
     }
 }

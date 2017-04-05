@@ -1,12 +1,10 @@
 ﻿import { DirectiveNode } from "./DirectiveNode";
 import { DocumentContext } from "../DocumentContext";
-import { ILogger } from "../../Core/Logging/ILogger";
 import { KeySignature } from "../../Core/Sheet/KeySignature";
-import { LogLevel } from "../../Core/Logging/LogLevel";
 import { Messages } from "../Messages";
 import { NoteNameNode } from "./NoteNameNode";
 import { Scanner } from "../Scanner";
-import { IParseResult, ParseHelper } from "../ParseResult";
+import { ParseResult, ParseHelper, ParseSuccessOrEmptyResult } from "../ParseResult";
 import { TextRange } from "../../Core/Parsing/TextRange";
 
 export class KeyDirectiveNode extends DirectiveNode {
@@ -16,38 +14,40 @@ export class KeyDirectiveNode extends DirectiveNode {
         super(range);
     }
 
-    apply(context: DocumentContext, logger: ILogger): boolean {
-        const result = this.toDocumentElement(context, logger);
-        if (!result)
-            return false;
+    apply(context: DocumentContext): ParseSuccessOrEmptyResult<void> {
+        const result = this.compile(context);
+        if (!ParseHelper.isSuccessful(result)) {
+            return ParseHelper.empty(...result.messages);
+        }
 
-        context.alterDocumentState(state => state.keySignature = result);
-        return true;
+        context.alterDocumentState(state => state.keySignature = result.value);
+        return ParseHelper.voidSuccess;
     }
 
-    private toDocumentElement(context: DocumentContext, logger: ILogger): KeySignature | undefined {
+    private compile(context: DocumentContext): ParseSuccessOrEmptyResult<KeySignature> {
+        const helper = new ParseHelper();
         const noteName = this.key.toNoteName();
         if (context.documentState.keySignature !== undefined && context.documentState.keySignature.key === noteName) {
-            logger.report(LogLevel.Suggestion, this.range, Messages.Suggestion_RedundantKeySignature);
-            return undefined;  // todo: really? for a suggestion?
+            helper.suggestion(this.range, Messages.Suggestion_RedundantKeySignature);
+            return helper.empty();
         }
 
         const element = new KeySignature();
         element.range = this.range;
         element.key = noteName;
 
-        return element;
+        return helper.success(element);
     }
 }
 
 export module KeyDirectiveNode {
-    export function parseBody(scanner: Scanner): IParseResult<KeyDirectiveNode> {
+    export function parseBody(scanner: Scanner): ParseResult<KeyDirectiveNode> {
         scanner.skipOptional(":", true);
         const node = new KeyDirectiveNode();
 
         const noteName = NoteNameNode.parse(scanner);
         if (!ParseHelper.isSuccessful(noteName)) {
-            return ParseHelper.relayState(noteName);
+            return ParseHelper.relayFailure(noteName);
         }
 
         node.key = noteName.value!;
