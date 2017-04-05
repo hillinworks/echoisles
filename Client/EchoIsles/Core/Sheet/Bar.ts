@@ -5,10 +5,10 @@ import { Lyrics } from "./Lyrics";
 import { DocumentState } from "./DocumentState";
 import { Voice } from "./Voice";
 import { PreciseDuration } from "../MusicTheory/PreciseDuration";
-DocumentRow.Child
 import { AlternativeEndingPosition } from "./AlternativeEndingPosition";
 import { VoicePart } from "./VoicePart";
 import { IBeatElementContainer } from "./IBeatElementContainer";
+import { BarColumn } from "./BarColumn";
 
 export class Bar extends Element {
     index: number;

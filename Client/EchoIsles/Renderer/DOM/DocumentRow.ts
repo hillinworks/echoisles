@@ -39,6 +39,7 @@ export class DocumentRow extends WidgetBase {
         }
 
         this.bars.push(bar);
+        bar.ownerRow = this;
     }
 
     seal(width: number): void {
@@ -160,20 +161,18 @@ export module DocumentRow {
         readonly ownerRow: DocumentRow;
     }
 
-    export class Child extends WidgetBase implements IDecendant {
+    export abstract class Child extends WidgetBase implements IDecendant {
 
         private _desiredCeilingSize: number;
         private _desiredFloorSize: number;
+
+        abstract readonly ownerRow: DocumentRow;
 
         /** the position relative to owner row */
         relativePosition: Point;
 
         /** the relative y position of the first (upper-most) bar line */
         relativeBaseline: number;
-
-        constructor(readonly ownerRow: DocumentRow) {
-            super(ownerRow);
-        }
 
         get desiredCeilingSize(): number {
             return this._desiredCeilingSize;

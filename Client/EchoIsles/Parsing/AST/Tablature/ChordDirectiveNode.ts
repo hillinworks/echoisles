@@ -11,6 +11,7 @@ import { Scanner, ParenthesisReadResult } from "../../Scanner";
 import { IParseResult, ParseHelper } from "../../ParseResult";
 import { LiteralParsers } from "../../LiteralParsers";
 import { TextRange } from "../../../Core/Parsing/TextRange";
+import { any } from "../../../Core/Utilities/LinqLite";
 
 export class ChordDirectiveNode extends DirectiveNode {
     name: LiteralNode<string>;
@@ -34,7 +35,7 @@ export class ChordDirectiveNode extends DirectiveNode {
 
     private toDocumentElement(context: DocumentContext, logger: ILogger): ChordDefinition | undefined {
         const tablatureState = context.documentState as TablatureState;
-        if (tablatureState.definedChords.any(c => c.name === this.name.value)) {
+        if (any(tablatureState.definedChords, c => c.name === this.name.value)) {
             logger.report(LogLevel.Warning, this.range, Messages.Warning_ChordAlreadyDefined);
             return undefined;
         }

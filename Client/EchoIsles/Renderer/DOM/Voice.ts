@@ -9,7 +9,6 @@ import { VerticalDirection } from "../../Core/Style/VerticalDirection";
 import { Style } from "../Style";
 import { Defaults } from "../../Core/Sheet/Tablature/Defaults";
 import { HeightMap } from "./HeightMap";
-import {Point} from "../Point";
 
 export class Voice extends Bar.Child {
 
@@ -68,7 +67,7 @@ export class Voice extends Bar.Child {
         let bounds = Rect.zero;
         for (let widget of this.beatWidgets) {
             widget.measure(availableSize);
-            bounds = bounds.union(Rect.create(widget.rootPosition, widget.desiredSize));
+            bounds = bounds.union(Rect.create(widget.barRelatedPosition, widget.desiredSize));
         }
 
         return bounds.size;
@@ -77,7 +76,7 @@ export class Voice extends Bar.Child {
     protected arrangeOverride(finalSize: Size): Size {
         let bounds = Rect.create(this.position);
         for (let widget of this.beatWidgets) {
-            const position = this.position.translate(widget.rootPosition);
+            const position = this.position.translate(widget.barRelatedPosition);
             widget.arrange(Rect.create(position, widget.desiredSize));
             bounds = bounds.union(Rect.create(widget.position, widget.renderSize));
         }

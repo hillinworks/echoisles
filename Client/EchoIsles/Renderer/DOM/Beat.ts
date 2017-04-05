@@ -179,7 +179,7 @@ export class Beat extends BeatWidgetBase {
         let y = this.ownerVoice.selectEpitaxy(
             above => this.ownerColumn.relativeNoteElementsBounds.top,
             under => this.ownerColumn.relativeNoteElementsBounds.bottom);
-        this.protectedRootPosition = new Point(x, y);
+        this.barRelatedPosition = new Point(x, y);
 
         let bounds = Rect.zero;
 
@@ -189,26 +189,26 @@ export class Beat extends BeatWidgetBase {
             const noteStyle = Style.current.note;
 
             y = this.ownerVoice.epitaxyMax(
-                this.rootPosition.y + this.ownerVoice.transformEpitaxy(noteStyle.stem.standardHeight),
+                this.barRelatedPosition.y + this.ownerVoice.transformEpitaxy(noteStyle.stem.standardHeight),
                 this.ownerVoice.relativeEpitaxyBase + this.ownerVoice.transformEpitaxy(noteStyle.stem.minimumEpitaxy));
         }
 
         let stemTipPosition = Point.zero;
 
         if (this.stem) {
-            this.stem.relativePosition = stemTipPosition;
-            this.stem.measure(new Size(Number.POSITIVE_INFINITY, Math.abs(y - this.rootPosition.y)));
+            this.stem.barRelatedPosition = stemTipPosition;
+            this.stem.measure(new Size(Number.POSITIVE_INFINITY, Math.abs(y - this.barRelatedPosition.y)));
 
             stemTipPosition = stemTipPosition.translate(new Vector(0, this.ownerVoice.transformEpitaxy(this.stem.desiredSize.height)));
 
-            bounds = bounds.union(Rect.create(this.stem.relativePosition, this.stem.desiredSize));
+            bounds = bounds.union(Rect.create(this.stem.barRelatedPosition, this.stem.desiredSize));
         }
 
         if (this.flag) {
-            this.flag.relativePosition = stemTipPosition;
+            this.flag.barRelatedPosition = stemTipPosition;
             this.flag.measure(Size.infinity);
 
-            bounds = bounds.union(Rect.create(this.flag.relativePosition, this.flag.desiredSize));
+            bounds = bounds.union(Rect.create(this.flag.barRelatedPosition, this.flag.desiredSize));
 
             const flagHeight = this.flag.desiredSize.height;
             y += this.ownerVoice.transformEpitaxy(flagHeight);
@@ -218,7 +218,7 @@ export class Beat extends BeatWidgetBase {
 
         const xRelativeToRow
             = this.ownerBar.getXRelativeToOwnerRow(
-                this.rootPosition.x - bounds.width / 2 - Style.current.note.stem.horizontalMargin);
+                this.barRelatedPosition.x - bounds.width / 2 - Style.current.note.stem.horizontalMargin);
         const occupiedWidth = bounds.width + Style.current.note.stem.horizontalMargin * 2;
 
         this.ownerVoice.heightMap.ensureHeight(xRelativeToRow,
@@ -233,10 +233,10 @@ export class Beat extends BeatWidgetBase {
 
         if (this.tremolo) {
             const stem = this.stem!;
-            this.tremolo.relativePosition = stem.relativePosition.translate(new Vector(0,
+            this.tremolo.barRelatedPosition = stem.barRelatedPosition.translate(new Vector(0,
                 this.ownerVoice.transformEpitaxy(stem.desiredSize.height - Style.current.note.tremoloOffset)));
             this.tremolo.measure(Size.infinity);
-            bounds = bounds.union(Rect.create(this.tremolo.relativePosition, this.tremolo.desiredSize));
+            bounds = bounds.union(Rect.create(this.tremolo.barRelatedPosition, this.tremolo.desiredSize));
         }
 
         this.updateSemiBeamConnectorPositions();
@@ -267,7 +267,7 @@ export class Beat extends BeatWidgetBase {
         this.measure(finalSize);
 
         for (let child of this.getAllChildren()) {
-            let position = this.ownerBar.position.translate(child.relativePosition);
+            let position = this.ownerBar.position.translate(child.barRelatedPosition);
             if (this.ownerVoice.epitaxyDirection === VerticalDirection.Above) {
                 position = position.translate(new Vector(0, -child.desiredSize.height));
             }
@@ -277,20 +277,20 @@ export class Beat extends BeatWidgetBase {
         return this.desiredSize;
     }
 
-    private layoutModifierLike(modifier: WidgetBase & { relativePosition: Point }, availableSize: Size, bounds: Rect): Rect {
+    private layoutModifierLike(modifier: WidgetBase & Bar.IBarRelated, availableSize: Size, bounds: Rect): Rect {
 
         const xRelativeToRow
             = this.ownerBar.getXRelativeToOwnerRow(
-                this.rootPosition.x - modifier.desiredSize.width / 2 - Style.current.note.modifierMargin);
+                this.barRelatedPosition.x - modifier.desiredSize.width / 2 - Style.current.note.modifierMargin);
         const occupiedWidth = modifier.desiredSize.width + Style.current.note.modifierMargin * 2;
 
         // height get from heightMap is relative to epitaxy base
         let height = this.ownerVoice.heightMap.getHeight(xRelativeToRow, occupiedWidth);
 
-        modifier.relativePosition = new Point(this.rootPosition.x - modifier.desiredSize.width / 2,
+        modifier.barRelatedPosition = new Point(this.barRelatedPosition.x - modifier.desiredSize.width / 2,
             this.ownerVoice.relativeEpitaxyBase + this.ownerVoice.transformEpitaxy(height));
 
-        bounds = bounds.union(Rect.create(modifier.relativePosition, modifier.desiredSize));
+        bounds = bounds.union(Rect.create(modifier.barRelatedPosition, modifier.desiredSize));
 
         height += modifier.desiredSize.height + Style.current.note.modifierMargin;
 
@@ -307,12 +307,12 @@ export class Beat extends BeatWidgetBase {
             if (isLastBeat) {
                 const previousColumn = this.ownerBar.columns[this.ownerColumn.barColumn.index - 1];
                 x1 = previousColumn.relativePosition + previousColumn.relativeNoteElementsBounds.width / 2;
-                x2 = this.rootPosition.x;
+                x2 = this.barRelatedPosition.x;
                 const width = Math.min(Style.current.beam.maximumSemiBeamWidth, (x2 - x1) / 2);
                 x1 = x2 - width;
             } else {
                 const nextColumn = this.ownerBar.columns[this.ownerColumn.barColumn.index + 1];
-                x1 = this.rootPosition.x;
+                x1 = this.barRelatedPosition.x;
                 x2 = nextColumn.relativePosition + nextColumn.relativeNoteElementsBounds.width / 2;
                 const width = Math.min(Style.current.beam.maximumSemiBeamWidth, (x2 - x1) / 2);
                 x2 = x1 + width;
@@ -337,7 +337,7 @@ export module Beat {
     export abstract class Child extends WidgetBase {
 
         /** a position relative to its owner bar */
-        relativePosition: Point;
+        barRelatedPosition: Point;
 
 
     }

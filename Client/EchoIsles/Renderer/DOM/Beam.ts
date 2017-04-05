@@ -68,7 +68,7 @@ export class Beam extends BeatWidgetBase {
 
     private initializeComponents() {
         this.elements.push(...select(this.beam.elements, e => BeatWidgetBase.create(this, e)));
-        this.connector = new BeamConnector(this);
+        this.connector = new BeamConnector(this, this.beam.beatNoteValue);
     }
 
     protected measureOverride(availableSize: Size): Size {
@@ -81,7 +81,7 @@ export class Beam extends BeatWidgetBase {
         for (let element of this.elements) {
             element.context = this.context;
             element.measure(availableSize);
-            bounds = bounds.union(Rect.create(element.rootPosition, element.desiredSize));
+            bounds = bounds.union(Rect.create(element.barRelatedPosition, element.desiredSize));
         }
 
         this._desiredEpitaxySize = new Size(
@@ -98,9 +98,9 @@ export class Beam extends BeatWidgetBase {
         for (let element of this.elements) {
             element.context = this.context;
 
-            // note rootPosition is relative to owner bar
-            const x = this.ownerBar.position.x + element.rootPosition.x;
-            const rootY = this.ownerBar.position.y + element.rootPosition.y;
+            // note barRelatedPosition is relative to owner bar
+            const x = this.ownerBar.position.x + element.barRelatedPosition.x;
+            const rootY = this.ownerBar.position.y + element.barRelatedPosition.y;
             const y = this.ownerVoice.selectEpitaxy(
                 above => rootY - element.desiredSize.height,
                 under => rootY);

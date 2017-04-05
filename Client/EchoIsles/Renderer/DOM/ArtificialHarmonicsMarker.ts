@@ -4,7 +4,7 @@ import { Bar } from "./Bar";
 
 export class ArtificialHarmonicsMarker extends WidgetBase implements Bar.IBarRelated {
 
-    relativePosition: Point;
+    barRelatedPosition: Point;
 
     constructor(parent: WidgetBase, readonly fret?: number) {
         super(parent);

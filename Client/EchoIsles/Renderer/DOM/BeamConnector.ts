@@ -6,7 +6,7 @@ import { DocumentRow } from "./DocumentRow";
 import { BaseNoteValue } from "../../Core/MusicTheory/BaseNoteValue";
 
 export class BeamConnector extends WidgetBase implements Bar.IBarRelated, Voice.IDescendant {
-    relativePosition: Point;
+    barRelatedPosition: Point;
 
     private from: Point;
     private to: Point;

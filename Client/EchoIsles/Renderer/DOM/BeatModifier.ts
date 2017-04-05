@@ -4,7 +4,7 @@ import { Bar } from "./Bar";
 import { Point } from "../Point";
 
 export class BeatModifier extends WidgetBase implements Bar.IBarRelated {
-    relativePosition: Point;
+    barRelatedPosition: Point;
 
     constructor(parent: WidgetBase, readonly modifier: CoreBeatModifier) {
         super(parent);

@@ -11,6 +11,7 @@ import { select } from "../../Core/Utilities/LinqLite";
 import { Point } from "../Point";
 import { DocumentRow } from "./DocumentRow";
 import { BarColumn } from "./BarColumn";
+import { Document } from "./Document";
 
 
 export class Bar extends DocumentRow.Child {
@@ -19,7 +20,9 @@ export class Bar extends DocumentRow.Child {
     private readonly columnSpacings = new Array<number>();
     private readonly voices = new Array<Voice>();
 
-    constructor(parent: DocumentRow, public readonly bar: CoreBar) {
+    ownerRow: DocumentRow;
+
+    constructor(parent: Document, public readonly bar: CoreBar) {
         super(parent);
         this.initializeComponents();
     }
@@ -156,6 +159,6 @@ export module Bar {
     }
 
     export interface IBarRelated {
-        relativePosition: Point;
+        barRelatedPosition: Point;
     }
 }

@@ -7,6 +7,7 @@ import { LogLevel } from "../../Core/Logging/LogLevel";
 import { Messages } from "../Messages";
 import { Scanner, ParenthesisReadResult } from "../Scanner";
 import { IParseResult, ParseHelper } from "../ParseResult";
+import { any } from "../../Core/Utilities/LinqLite";
 
 export class SectionDirectiveNode extends DirectiveNode {
     sectionName: LiteralNode<string>;
@@ -26,7 +27,7 @@ export class SectionDirectiveNode extends DirectiveNode {
     }
 
     private toDocumentElement(context: DocumentContext, logger: ILogger): Section | undefined {
-        if (context.documentState.definedSections.any(this.valueEquals)) {
+        if (any(context.documentState.definedSections, this.valueEquals)) {
             logger.report(LogLevel.Warning,
                 this.range,
                 Messages.Warning_DuplicatedSectionName,

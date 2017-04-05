@@ -7,7 +7,7 @@ import {Point} from "../Point";
 
 export class Stem extends WidgetBase implements Bar.IBarRelated {
 
-    relativePosition: Point;
+    barRelatedPosition: Point;
 
     constructor(parent: WidgetBase, readonly noteValue: BaseNoteValue) {
         super(parent);

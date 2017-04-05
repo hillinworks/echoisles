@@ -11,10 +11,10 @@ import { Size } from "../Size";
 import { DocumentRow } from "./DocumentRow";
 import { BeamContext } from "./BeamContext";
 
-export abstract class BeatWidgetBase extends WidgetBase implements Voice.IDescendant {
+export abstract class BeatWidgetBase extends WidgetBase implements Voice.IDescendant, Bar.IBarRelated {
 
     /** the root position relative to its owner bar */
-    protected protectedRootPosition: Point;
+    barRelatedPosition: Point;
 
     context?: BeamContext;
 
@@ -49,10 +49,6 @@ export abstract class BeatWidgetBase extends WidgetBase implements Voice.IDescen
         }
 
         return undefined;
-    }
-
-    get rootPosition(): Point {
-        return this.protectedRootPosition;
     }
 
     abstract get desiredEpitaxySize(): Size;

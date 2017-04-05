@@ -3,8 +3,8 @@ import { DocumentRow } from "./DocumentRow";
 
 export class BarLine extends DocumentRow.Child {
 
-    constructor(parent: DocumentRow, private readonly barLine: CoreBarLine) {
-        super(parent);
+    constructor(readonly ownerRow: DocumentRow, readonly barLine: CoreBarLine) {
+        super(ownerRow);
     }
 
 }

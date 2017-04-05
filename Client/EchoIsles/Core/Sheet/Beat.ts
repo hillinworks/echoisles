@@ -7,13 +7,13 @@ import { NoteRepetition } from "../MusicTheory/NoteRepetition";
 import { HoldAndPause } from "../MusicTheory/HoldAndPause";
 import { BeatAccent } from "../MusicTheory/BeatAccent";
 import { PreciseDuration } from "../MusicTheory/PreciseDuration";
-DocumentRow.Child
 import { Beam } from "./Beam";
 import { IBeatElementContainer } from "./IBeatElementContainer";
 import { Bar } from "./Bar";
 import { VoicePart } from "./VoicePart";
 import { NoteConnection } from "../MusicTheory/String/NoteConnection";
 import { VerticalDirection } from "../Style/VerticalDirection";
+import { BarColumn } from "./BarColumn";
 
 export class Beat extends Element {
     noteValue: NoteValue;
