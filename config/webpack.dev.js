@@ -26,6 +26,7 @@ module.exports = webpackMerge(commonConfig, {
                     }
                 ],
                 vendor: [
+                    '@angular/animations',
                     '@angular/platform-browser',
                     '@angular/platform-browser-dynamic',
                     '@angular/core',
@@ -34,12 +35,15 @@ module.exports = webpackMerge(commonConfig, {
                     '@angular/http',
                     '@angular/router',
                     'rxjs',
-                    'bootstrap',
+                    'angular2-jwt',
+                    '@ngrx/core',
+                    '@ngrx/store',
+                    '@ngrx/store-devtools',
                     '@ngx-translate/core',
                     '@ng-bootstrap/ng-bootstrap'
                 ]
             },
-            dllDir: './wwwroot/dist',
+            dllDir: path.join(__dirname, '../wwwroot', '/dist'),
             webpackConfig: webpackMergeDll(commonConfig, {
                 devtool: 'cheap-module-source-map',
                 plugins: []

@@ -15,27 +15,17 @@
 
   <ItemGroup>
     <Compile Remove="node_modules\**\*;Client\**\*" />
-    <Content Include="wwwroot\assets\**\*" />
-    <!--<None Update="wwwroot\**\*;Views\**\*;Dockerfile">
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </None>-->
+    <Content Remove="wwwroot\dist\**\*" />
   </ItemGroup>
 
- <Target Name="RunWebpack" AfterTargets="ComputeFilesToPublish">
-    <!-- As part of publishing, ensure the JS resources are freshly built in production mode -->
-    <!--<Exec Command="npm install" />-->
+  <Target Name="RunWebpack" BeforeTargets="BeforePublish">
+    <Exec Command="npm run clean:dist" />
     <Exec Command="npm run build:prod" />
-
-    <!-- Include the newly-built files in the publish output -->
     <ItemGroup>
-      <DistFiles Include="wwwroot\dist\**;" />
-      <ResolvedFileToPublish Include="@(DistFiles->'%(FullPath)')" Exclude="@(ResolvedFileToPublish)">
-        <RelativePath>%(DistFiles.Identity)</RelativePath>
-        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      </ResolvedFileToPublish>
+      <Content Include="wwwroot\dist\**\*" CopytoPublishDirectory="Always" />
     </ItemGroup>
   </Target>
-
+  
   <ItemGroup>
     <PackageReference Include="AspNet.Security.OAuth.Introspection" Version="1.0.0-beta1-final" />
     <PackageReference Include="AspNet.Security.OAuth.Validation" Version="1.0.0-beta1-final" />
@@ -78,15 +68,15 @@
     <PackageReference Include="OpenIddict.Mvc" Version="1.0.0-*" />
     <PackageReference Include="SendGrid.NetCore" Version="1.0.0-rtm-00002" />
     <PackageReference Include="MailKit" Version="1.12.0" />
-    <PackageReference Include="Twilio" Version="5.1.1-alpha1" />
-    <PackageReference Include="Stripe.net" Version="7.6.0" />
+    <PackageReference Include="Twilio" Version="5.1.1" />
+    <PackageReference Include="Stripe.net" Version="7.6.1" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.1" />
     <PackageReference Include="Webpack" Version="4.0.0" />
     <PackageReference Include="Serilog" Version="2.4.1-dev-00801" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="1.4.1-dev-10147" />
     <PackageReference Include="Serilog.Sinks.Seq" Version="3.2.0" />
     <PackageReference Include="Swashbuckle" Version="6.0.0-beta902" />
-    <PackageReference Include="Bogus" Version="11.0.4" />
+    <PackageReference Include="Bogus" Version="12.0.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="1.1.0">
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>
