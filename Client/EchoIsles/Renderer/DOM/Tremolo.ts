@@ -1,8 +1,8 @@
 ﻿import { WidgetBase } from "../WidgetBase";
 import { Point } from "../Point";
-import { Bar } from "./Bar";
+import {IBarRelated} from "./IBarRelated";
 
-export class Tremolo extends WidgetBase implements Bar.IBarRelated {
+export class Tremolo extends WidgetBase implements IBarRelated {
     barRelatedPosition: Point;
 
     constructor(parent: WidgetBase) {

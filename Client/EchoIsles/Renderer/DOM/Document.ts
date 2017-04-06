@@ -9,6 +9,7 @@ import { Rect } from "../Rect";
 import { Vector } from "../Vector";
 import { IWidgetRoot } from "../WidgetRoot";
 import { select } from "../../Core/Utilities/LinqLite";
+import { Point } from "../Point";
 
 export class Document extends WidgetBase implements IWidgetRoot {
 
@@ -81,19 +82,19 @@ export class Document extends WidgetBase implements IWidgetRoot {
         this.rows.length = 0;
 
         let currentRow = this.createRow();
-        let remainingWidth = width;
+        let sumWidth = 0;
 
         for (let bar of this.bars) {
-            bar.measure(new Size(width, Infinity));
-            remainingWidth -= bar.desiredSize.width;
+            bar.relativePosition = new Point(0, sumWidth);
+            sumWidth += bar.measureWidth();
 
             let barAdded = false;
-            if (remainingWidth >= 0 || currentRow.barCount === 0) {
+            if (width >= sumWidth || currentRow.barCount === 0) {
                 currentRow.addBar(bar);
                 barAdded = true;
             }
 
-            if (remainingWidth <= 0) {
+            if (width <= sumWidth) {
                 currentRow.seal(width);
                 currentRow = this.createRow();
 

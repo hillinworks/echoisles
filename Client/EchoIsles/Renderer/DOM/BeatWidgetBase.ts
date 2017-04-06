@@ -1,17 +1,15 @@
 ﻿import { WidgetBase } from "../WidgetBase";
-import { IBeatElement } from "../../Core/Sheet/IBeatElement";
 import { Point } from "../Point";
-import { Beam as CoreBeam } from "../../Core/Sheet/Beam";
 import { Beam } from "./Beam";
-import { Beat as CoreBeat } from "../../Core/Sheet/Beat";
-import { Beat } from "./Beat";
 import { Voice } from "./Voice";
 import { Bar } from "./Bar";
 import { Size } from "../Size";
 import { DocumentRow } from "./DocumentRow";
 import { BeamContext } from "./BeamContext";
+import {IVoiceDescendant} from "./IVoiceDescendant";
+import {IBarRelated} from "./IBarRelated";
 
-export abstract class BeatWidgetBase extends WidgetBase implements Voice.IDescendant, Bar.IBarRelated {
+export abstract class BeatWidgetBase extends WidgetBase implements IVoiceDescendant, IBarRelated {
 
     /** the root position relative to its owner bar */
     barRelatedPosition: Point;
@@ -55,15 +53,5 @@ export abstract class BeatWidgetBase extends WidgetBase implements Voice.IDescen
 }
 
 export module BeatWidgetBase {
-    export type ParentType = (WidgetBase & Voice.IDescendant) | Voice;
-
-    export function create(owner: ParentType, element: IBeatElement): BeatWidgetBase {
-        if (element instanceof CoreBeam) {
-            return new Beam(owner, element);
-        } else if (element instanceof CoreBeat) {
-            return new Beat(owner, element);
-        } else {
-            throw new Error("invalid element");
-        }
-    }
+    export type ParentType = (WidgetBase & IVoiceDescendant) | Voice;
 }

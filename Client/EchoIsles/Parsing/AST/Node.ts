@@ -1,6 +1,5 @@
 ﻿import { TextRange } from "../../Core/Parsing/TextRange";
-import { DocumentContext } from "../DocumentContext";
-import { ParseResultMaybeEmpty, ParseHelper } from "../ParseResult";
+
 
 export abstract class Node {
 
@@ -10,7 +9,4 @@ export abstract class Node {
 
     }
 
-    apply(context: DocumentContext): ParseResultMaybeEmpty<void> {
-        return ParseHelper.voidSuccess;
-    }
 }

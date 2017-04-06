@@ -6,8 +6,8 @@ export abstract class RhythmSegmentBase extends Element {
     trebleVoice?: RhythmSegmentVoice;
     bassVoice?: RhythmSegmentVoice;
 
-    get firstVoice(): RhythmSegmentVoice | undefined {
-        return this.trebleVoice === undefined ? this.bassVoice : this.trebleVoice;
+    get firstVoice(): RhythmSegmentVoice {
+        return this.trebleVoice === undefined ? this.bassVoice! : this.trebleVoice!;
     }
 
     get duration(): PreciseDuration {

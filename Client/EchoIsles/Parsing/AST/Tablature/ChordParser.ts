@@ -1,6 +1,6 @@
 ﻿import { Scanner } from "../../Scanner";
 import { Interval } from "../../../Core/MusicTheory/Interval";
-import { ParseResult, ParseHelper, ParseSuccessOrEmptyResult, ParseResultMaybeEmpty, ParseResultType } from "../../ParseResult";
+import { ParseResult, ParseHelper, ParseSuccessOrEmptyResult, ParseResultMaybeEmpty } from "../../ParseResult";
 import { NoteNameNode } from "../NoteNameNode";
 import { Chord } from "../../../Core/MusicTheory/Chord";
 import { NoteName } from "../../../Core/MusicTheory/NoteName";
@@ -31,12 +31,12 @@ export class ChordParser {
         this.helper = new ParseHelper();
         this.scanner = new Scanner(chordName.trim());
 
-        const noteName = NoteNameNode.parse(this.scanner);
+        const noteName = this.helper.absorb(NoteNameNode.parse(this.scanner));
         if (!ParseHelper.isSuccessful(noteName)) {
-            return this.helper.relayFailure(noteName);
+            return this.helper.fail();
         }
 
-        const root = noteName.value!.toNoteName();
+        const root = noteName.value.toNoteName();
 
         if (this.scanner.isEndOfInput) {
             return this.helper.success(Chord.construct(chordName, root, Interval.M3, Interval.P5));
@@ -56,18 +56,11 @@ export class ChordParser {
             this.addIntervals(Interval.m3, Interval.d5, Interval.m7);
 
         } else {
+            if (!ParseHelper.isSuccessful(this.helper.absorb(this.readDominant()))) {
+                if (ParseHelper.isSuccessful(this.helper.absorb(this.readTriad()))) {
+                    if (!ParseHelper.isSuccessful(this.helper.absorb(this.readSeventh()))) {
 
-            const readDominantResult = this.readDominant();
-
-            if (!ParseHelper.isSuccessful(readDominantResult)) {
-
-                let readTriadResult = this.readTriad();
-
-                if (ParseHelper.isSuccessful(readTriadResult)) {
-
-                    if (!ParseHelper.isSuccessful(this.readSeventh())) {
-
-                        if (this.readExtended().result === ParseResultType.Failed) {
+                        if (ParseHelper.isFailed(this.helper.absorb(this.readExtended()))) {
                             return this.helper.fail();  // failure message is already stored in this.helper, don't relay
                         }
                     }
@@ -81,24 +74,24 @@ export class ChordParser {
 
         let bass: NoteName | undefined = undefined;
         if (!isFifth) {
-            if (this.readSuspended().result === ParseResultType.Failed) {
+            if (ParseHelper.isFailed(this.helper.absorb(this.readSuspended()))) {
                 return this.helper.fail();
             }
 
             if (!this.addedToneRead) {
-                if (this.readAddedTone().result === ParseResultType.Failed) {
+                if (ParseHelper.isFailed(this.helper.absorb(this.readAddedTone()))) {
                     return this.helper.fail();
                 }
             }
 
-            if (this.readAltered().result === ParseResultType.Failed) {
+            if (ParseHelper.isFailed(this.helper.absorb(this.readAltered()))) {
                 return this.helper.fail();
             }
 
-            const readBassResult = this.readBass();
+            const readBassResult = this.helper.absorb(this.readBass());
             if (ParseHelper.isSuccessful(readBassResult)) {
                 bass = readBassResult.value;
-            } else if (readBassResult.result === ParseResultType.Failed) {
+            } else if (ParseHelper.isFailed(readBassResult)) {
                 return this.helper.fail();
             }
         }
@@ -177,7 +170,7 @@ export class ChordParser {
         if (!this.scanner.expectChar("/"))
             return this.helper.empty();
 
-        const noteName = NoteNameNode.parse(this.scanner);
+        const noteName = this.helper.absorb(NoteNameNode.parse(this.scanner));
         if (!ParseHelper.isSuccessful(noteName)) {
             return this.helper.fail(this.scanner.lastReadRange, Messages.Error_ChordMissingOrInvalidBassNote);
         }

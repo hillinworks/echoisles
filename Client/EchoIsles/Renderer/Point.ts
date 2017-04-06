@@ -27,6 +27,8 @@ export class Point implements IVectorLike {
 
 export module Point {
     export const zero = new Point(0, 0);
+    // ReSharper disable once InconsistentNaming
+    export const NaN = new Point(Number.NaN, Number.NaN);
 
     export function average(points: Iterable<IVectorLike>): Point {
         let sumX = 0, sumY = 0, count = 0;

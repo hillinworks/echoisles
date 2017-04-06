@@ -20,21 +20,21 @@ export class RhythmSegmentNode extends RhythmSegmentNodeBase {
     }
 
     compile(context: DocumentContext): ParseResult<RhythmSegment> {
-
+        const helper = new ParseHelper();
         const segment = new RhythmSegment();
         segment.range = this.range;
 
-        const fillRhythmSegmentVoicesResult = this.fillRhythmSegmentVoices(context, segment);
+        const fillRhythmSegmentVoicesResult = helper.absorb(this.fillRhythmSegmentVoices(context, segment));
         if (!ParseHelper.isSuccessful(fillRhythmSegmentVoicesResult)) {
-            return ParseHelper.relayFailure(fillRhythmSegmentVoicesResult);
+            return helper.fail();
         }
 
         let chordFingering: ChordFingering | undefined = undefined;
         if (this.chordName !== undefined || this.fingering !== undefined) {
             if (this.fingering !== undefined) {
-                const result = this.fingering.compile(context);
+                const result = helper.absorb(this.fingering.compile(context));
                 if (!ParseHelper.isSuccessful(result)) {
-                    return ParseHelper.relayFailure(result);
+                    return helper.fail();
                 }
 
                 chordFingering = result.value;
@@ -54,7 +54,7 @@ export class RhythmSegmentNode extends RhythmSegmentNodeBase {
             segment.chord = chord;
         }
 
-        return ParseHelper.success(segment);
+        return helper.success(segment);
     }
 }
 

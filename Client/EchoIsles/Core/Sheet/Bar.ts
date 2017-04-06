@@ -14,7 +14,7 @@ export class Bar extends Element {
     index: number;
     openLine?: BarLine.OpenType;
     closeLine?: BarLine.CloseType;
-    rhythm: Rhythm;
+    rhythm?: Rhythm;
     lyrics?: Lyrics;
     documentState: DocumentState;
 

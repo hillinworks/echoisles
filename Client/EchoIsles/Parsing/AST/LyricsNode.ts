@@ -3,7 +3,7 @@ import { Lyrics } from "../../Core/Sheet/Lyrics";
 import { LyricsSegmentNode } from "./LyricsSegmentNode";
 import { DocumentContext } from "../DocumentContext";
 import { Scanner } from "../Scanner";
-import { ParseResult, ParseHelper } from "../ParseResult";
+import { ParseResult, ParseHelper, IParseSuccessResult } from "../ParseResult";
 import { TextRange } from "../../Core/Parsing/TextRange";
 
 export class LyricsNode extends Node {
@@ -14,26 +14,28 @@ export class LyricsNode extends Node {
     }
 
     compile(context: DocumentContext): ParseResult<Lyrics> {
+        const helper = new ParseHelper();
         const lyrics = new Lyrics();
         lyrics.range = this.range;
 
         for (let segment of this.lyricsSegments) {
-            const result = segment.compile(context);
+            const result = helper.absorb(segment.compile(context));
             if (!ParseHelper.isSuccessful(result)) {
-                return ParseHelper.relayFailure(result);
+                return helper.fail();
             }
 
             lyrics.segments.push(result.value);
         };
 
-        return ParseHelper.success(lyrics);
+        return helper.success(lyrics);
     }
 }
 
 export module LyricsNode {
 
 
-    export function parse(scanner: Scanner, endOfBarPredicate: Scanner.Predicate): ParseResult<LyricsNode> {
+    export function parse(scanner: Scanner, endOfBarPredicate: Scanner.Predicate): IParseSuccessResult<LyricsNode> {
+        const helper = new ParseHelper();
         const anchor = scanner.makeAnchor();
         scanner.expectChar("@");
         scanner.skipWhitespaces();
@@ -58,7 +60,7 @@ export module LyricsNode {
         }
 
         node.range = anchor.range;
-        return ParseHelper.success(node);
+        return helper.success(node);
     }
 
 }

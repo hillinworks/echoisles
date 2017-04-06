@@ -15,7 +15,7 @@ import { RhythmSegmentVoice } from "../../Core/Sheet/RhythmSegmentVoice";
 import { Messages } from "../Messages";
 import { BeatNoteNode } from "./BeatNoteNode";
 import { Scanner } from "../Scanner";
-import { ParseResult, ParseResultMaybeEmpty, ParseHelper, ParseResultType } from "../ParseResult";
+import { ParseResult, ParseResultMaybeEmpty, ParseHelper } from "../ParseResult";
 import { LiteralParsers } from "../LiteralParsers";
 import { TextRange } from "../../Core/Parsing/TextRange";
 import { all } from "../../Core/Utilities/LinqLite";
@@ -70,6 +70,7 @@ export class BeatNode extends Node {
     }
 
     compile(context: DocumentContext, ownerVoice: RhythmSegmentVoice): ParseResult<Beat> {
+        const helper = new ParseHelper();
         const beat = new Beat();
         beat.range = this.range;
         beat.strumTechnique = LiteralNode.valueOrDefault(this.strumTechnique,
@@ -89,15 +90,15 @@ export class BeatNode extends Node {
         beat.isForceBeamStart = this.forceBeamStart != null;
         beat.isForceBeamEnd = this.forceBeamEnd != null;
 
-        let validateResult = this.validate(context, beat);
+        let validateResult = helper.absorb(this.validate(context, beat));
         if (!ParseHelper.isSuccessful(validateResult)) {
-            return ParseHelper.relayFailure(validateResult);
+            return helper.fail();
         }
 
         for (let note of this.notes) {
-            const result = note.compile(context, ownerVoice.part);
+            const result = helper.absorb(note.compile(context, ownerVoice.part));
             if (!ParseHelper.isSuccessful(result)) {
-                return ParseHelper.relayFailure(result);
+                return helper.fail();
             }
 
             const resultNote = result.value;
@@ -108,7 +109,7 @@ export class BeatNode extends Node {
 
         ownerVoice.isTerminatedWithRest = beat.isRest;
 
-        return ParseHelper.success(beat);
+        return helper.success(beat);
     }
 
     private validate(context: DocumentContext, beat: Beat): ParseResult<void> {
@@ -205,8 +206,11 @@ export class BeatNode extends Node {
 export module BeatNode {
 
     function readNotes(scanner: Scanner): ParseResultMaybeEmpty<BeatNoteNode[]> {
+
+        const helper = new ParseHelper();
+
         if (!scanner.expectChar("("))
-            return ParseHelper.empty();
+            return helper.empty();
 
         const notes = new Array<BeatNoteNode>();
 
@@ -214,11 +218,11 @@ export module BeatNode {
 
         let parenthesisClosed = false;
         while (!scanner.isEndOfLine) {
-            const note = BeatNoteNode.parse(scanner);
+            const note = helper.absorb(BeatNoteNode.parse(scanner));
             if (ParseHelper.isSuccessful(note)) {
                 notes.push(note.value);
             } else {
-                return ParseHelper.relayState(note);
+                return helper.fail();
             }
 
             if (!scanner.skipOptional(",", true)) {
@@ -230,18 +234,18 @@ export module BeatNode {
         }
 
         if (!parenthesisClosed) {
-            return ParseHelper.fail(scanner.lastReadRange,
+            return helper.fail(scanner.lastReadRange,
                 Messages.Error_RhythmInstructionMissingCloseParenthesisInStringsSpecifier);
         }
 
-        return ParseHelper.success(notes);
+        return helper.success(notes);
     }
 
     function readModifier(scanner: Scanner, node: BeatNode): ParseResult<void> {
 
         const helper = new ParseHelper();
 
-        const accent = LiteralParsers.readBeatAccent(scanner);
+        const accent = helper.absorb(LiteralParsers.readBeatAccent(scanner));
         if (ParseHelper.isSuccessful(accent)) {
             if (node.accent) {
                 helper.warning(scanner.lastReadRange, Messages.Warning_BeatAccentAlreadySpecified);
@@ -249,10 +253,10 @@ export module BeatNode {
                 node.accent = accent.value;
             }
 
-            return helper.success<void>(undefined);
+            return helper.voidSuccess();
         }
 
-        const ornament = LiteralParsers.readOrnament(scanner);
+        const ornament = helper.absorb(LiteralParsers.readOrnament(scanner));
         if (ParseHelper.isSuccessful(ornament)) {
             if (node.ornament) {
                 helper.warning(scanner.lastReadRange, Messages.Warning_OrnamentAlreadySpecified);
@@ -261,10 +265,10 @@ export module BeatNode {
                 node.ornamentParameter = ornament.value!.parameter;
             }
 
-            return helper.success<void>(undefined);
+            return helper.voidSuccess();
         }
 
-        const noteRepetition = LiteralParsers.readNoteRepetition(scanner);
+        const noteRepetition = helper.absorb(LiteralParsers.readNoteRepetition(scanner));
         if (ParseHelper.isSuccessful(noteRepetition)) {
             if (node.noteRepetition) {
                 helper.warning(scanner.lastReadRange, Messages.Warning_NoteRepetitionAlreadySpecified);
@@ -272,10 +276,10 @@ export module BeatNode {
                 node.noteRepetition = noteRepetition.value;
             }
 
-            return helper.success<void>(undefined);
+            return helper.voidSuccess();
         }
 
-        const holdAndPause = LiteralParsers.readHoldAndPause(scanner);
+        const holdAndPause = helper.absorb(LiteralParsers.readHoldAndPause(scanner));
         if (ParseHelper.isSuccessful(holdAndPause)) {
             if (node.holdAndPause) {
                 helper.warning(scanner.lastReadRange, Messages.Warning_BeatNoteHoldAndPauseEffectAlreadySpecified);
@@ -283,10 +287,10 @@ export module BeatNode {
                 node.holdAndPause = holdAndPause.value;
             }
 
-            return helper.success<void>(undefined);
+            return helper.voidSuccess();
         }
 
-        const strumTechnique = LiteralParsers.readStrumTechnique(scanner);
+        const strumTechnique = helper.absorb(LiteralParsers.readStrumTechnique(scanner));
         if (ParseHelper.isSuccessful(strumTechnique)) {
             if (node.strumTechnique || node.chordStrumTechnique) {
                 helper.warning(scanner.lastReadRange, Messages.Warning_BeatStrumTechniqueAlreadySpecified);
@@ -294,7 +298,7 @@ export module BeatNode {
                 node.strumTechnique = strumTechnique.value;
             }
 
-            return helper.success<void>(undefined);
+            return helper.voidSuccess();
         }
 
         return helper.fail(scanner.lastReadRange, Messages.Error_BeatModifierExpected);
@@ -325,10 +329,10 @@ export module BeatNode {
         }
 
         // read note value
-        const noteValue = NoteValueNode.parse(scanner);
+        const noteValue = helper.absorb(NoteValueNode.parse(scanner));
         if (ParseHelper.isSuccessful(noteValue)) {
             node.noteValue = noteValue.value;
-        } else if (noteValue.result === ParseResultType.Failed) {
+        } else if (ParseHelper.isFailed(noteValue)) {
             return helper.fail(); // todo: message?
         }
 
@@ -345,12 +349,12 @@ export module BeatNode {
         const postRestAnchor = scanner.makeAnchor();
 
         // read notes
-        const readNotesResult = readNotes(scanner);
+        const readNotesResult = helper.absorb(readNotes(scanner));
 
         if (ParseHelper.isSuccessful(readNotesResult)) {
             node.notes.push(...readNotesResult.value);
-        } else if (readNotesResult.result === ParseResultType.Failed) {
-            return helper.relayFailure(readNotesResult);
+        } else if (ParseHelper.isFailed(readNotesResult)) {
+            return helper.fail();
         }
 
         // all notes are tied, which is equal to the beat being tied
@@ -359,7 +363,7 @@ export module BeatNode {
         const noteValueIndetermined = !node.noteValue;
 
         // certain strum techniques (head strum techniques) can be placed before the colon token
-        const chordStrumTechnique = LiteralParsers.readChordStrumTechnique(scanner);
+        const chordStrumTechnique = helper.absorb(LiteralParsers.readChordStrumTechnique(scanner));
 
         if (ParseHelper.isSuccessful(chordStrumTechnique)) {
             node.chordStrumTechnique = chordStrumTechnique.value;
@@ -376,9 +380,9 @@ export module BeatNode {
             scanner.skipWhitespaces();
 
             do {
-                const readModifierResult = readModifier(scanner, node);
+                const readModifierResult = helper.absorb(readModifier(scanner, node));
                 if (!ParseHelper.isSuccessful(readModifierResult)) {
-                    return helper.relayFailure(readModifierResult);
+                    return helper.fail();
                 }
 
                 scanner.skipWhitespaces();

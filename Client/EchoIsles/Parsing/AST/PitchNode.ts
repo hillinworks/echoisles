@@ -10,16 +10,18 @@ import { TextRange } from "../../Core/Parsing/TextRange";
 export class PitchNode extends Node {
 
     static parse(scanner: Scanner): ParseResult<PitchNode> {
+        const helper = new ParseHelper();
+
         const anchor = scanner.makeAnchor();
 
-        const noteName = NoteNameNode.parse(scanner);
+        const noteName = helper.absorb(NoteNameNode.parse(scanner));
         if (!ParseHelper.isSuccessful(noteName)) {
-            return ParseHelper.relayFailure(noteName);
+            return helper.fail();
         }
 
         const octave = LiteralParsers.readInteger(scanner);
 
-        return ParseHelper.success(new PitchNode(anchor.range, noteName.value!, octave.value));
+        return helper.success(new PitchNode(anchor.range, noteName.value!, octave.value));
     }
 
 

@@ -4,7 +4,7 @@ import { LiteralNode } from "./LiteralNode";
 import { NoteValueAugment } from "../../Core/MusicTheory/NoteValueAugment";
 import { NoteValue } from "../../Core/MusicTheory/NoteValue";
 import { Scanner } from "../Scanner";
-import { ParseResult, ParseHelper, ParseResultType } from "../ParseResult";
+import { ParseResult, ParseHelper } from "../ParseResult";
 import { TextRange } from "../../Core/Parsing/TextRange";
 import { LiteralParsers } from "../LiteralParsers";
 import { Messages } from "../Messages";
@@ -31,7 +31,7 @@ export module NoteValueNode {
         const node = new NoteValueNode();
         const helper = new ParseHelper();
 
-        const baseNoteValue = LiteralParsers.readBaseNoteValue(scanner);
+        const baseNoteValue = helper.absorb(LiteralParsers.readBaseNoteValue(scanner));
         if (!ParseHelper.isSuccessful(baseNoteValue)) {
             return helper.fail(scanner.lastReadRange, Messages.Error_NoteValueExpected);
         }
@@ -39,7 +39,7 @@ export module NoteValueNode {
         node.base = baseNoteValue.value!;
 
         if (scanner.expectChar("/")) { // tuplet
-            const tuplet = LiteralParsers.readInteger(scanner);
+            const tuplet = helper.absorb(LiteralParsers.readInteger(scanner));
             if (!ParseHelper.isSuccessful(tuplet)) {
                 return helper.fail(scanner.lastReadRange, Messages.Error_TupletValueExpected);
             }
@@ -49,8 +49,8 @@ export module NoteValueNode {
             }
         }
 
-        const augment = LiteralParsers.readNoteValueAugment(scanner);
-        if (augment.result === ParseResultType.Failed) {
+        const augment = helper.absorb(LiteralParsers.readNoteValueAugment(scanner));
+        if (ParseHelper.isFailed(augment)) {
             return helper.relayFailure(augment);
         }
 

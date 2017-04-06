@@ -14,19 +14,20 @@ export class RhythmTemplateNode extends Node {
     }
 
     compile(context: DocumentContext): ParseResult<RhythmTemplate> {
+        const helper = new ParseHelper();
         const element = new RhythmTemplate();
         element.range = this.range;
 
         for (let segment of this.segments) {
-            const result = segment.compile(context);
+            const result = helper.absorb(segment.compile(context));
             if (!ParseHelper.isSuccessful(result)) {
-                return ParseHelper.relayFailure(result);
+                return helper.fail();
             }
 
             element.segments.push(result.value);
         }
 
-        return ParseHelper.success(element);
+        return helper.success(element);
     }
 
     valueEquals(other: RhythmTemplate) {
@@ -48,6 +49,7 @@ export class RhythmTemplateNode extends Node {
 export module RhythmTemplateNode {
 
     export function parse(scanner: Scanner): ParseResult<RhythmTemplateNode> {
+        const helper = new ParseHelper();
         const node = new RhythmTemplateNode();
 
         scanner.skipWhitespaces();
@@ -55,20 +57,20 @@ export module RhythmTemplateNode {
         const anchor = scanner.makeAnchor();
 
         if (scanner.peekChar() !== "[") { // handle optional brackets
-            const segment = RhythmTemplateSegmentNode.parse(scanner, true);
+            const segment = helper.absorb(RhythmTemplateSegmentNode.parse(scanner, true));
             if (!ParseHelper.isSuccessful(segment)) {
-                return ParseHelper.relayFailure(segment);
+                return helper.fail();
             }
 
             node.segments.push(segment.value!);
             node.range = anchor.range;
-            return ParseHelper.success(node);
+            return helper.success(node);
         }
 
         while (!scanner.isEndOfLine) {
-            const segment = RhythmTemplateSegmentNode.parse(scanner, false);
+            const segment = helper.absorb(RhythmTemplateSegmentNode.parse(scanner, false));
             if (!ParseHelper.isSuccessful(segment)) {
-                return ParseHelper.relayFailure(segment);
+                return helper.fail();
             }
 
             node.segments.push(segment.value!);
@@ -76,7 +78,7 @@ export module RhythmTemplateNode {
         }
 
         node.range = anchor.range;
-        return ParseHelper.success(node);
+        return helper.success(node);
     }
 
 }

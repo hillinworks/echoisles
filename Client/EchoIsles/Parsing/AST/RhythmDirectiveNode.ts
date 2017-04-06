@@ -20,9 +20,9 @@ export class RhythmDirectiveNode extends DirectiveNode {
 
         context.currentBar = undefined; // todo: this is ugly, refactor it
 
-        const result = this.templateNode.compile(context);
+        const result = helper.absorb(this.templateNode.compile(context));
         if (!ParseHelper.isSuccessful(result)) {
-            return helper.relayFailure(result);
+            return helper.fail();
         }
 
         context.alterDocumentState(state => (state as TablatureState).rhythmTemplate = result.value);
@@ -37,15 +37,16 @@ export class RhythmDirectiveNode extends DirectiveNode {
 
 export module RhythmDirectiveNode {
     export function parseBody(scanner: Scanner): ParseResult<RhythmDirectiveNode> {
+        const helper = new ParseHelper();
         scanner.skipOptional(":", true);
-        const template = RhythmTemplateNode.parse(scanner);
+        const template = helper.absorb(RhythmTemplateNode.parse(scanner));
         if (!ParseHelper.isSuccessful(template)) {
-            return ParseHelper.relayFailure(template);
+            return helper.fail();
         }
 
         const node = new RhythmDirectiveNode();
         node.templateNode = template.value!;
 
-        return ParseHelper.success(node);
+        return helper.success(node);
     }
 }

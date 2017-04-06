@@ -20,9 +20,9 @@ export class AlternateDirectiveNode extends DirectiveNode {
 
     apply(context: DocumentContext): ParseResult<void> {
         const helper = new ParseHelper();
-        const result = this.compile(context);
+        const result = helper.absorb(this.compile(context));
         if (!ParseHelper.isSuccessful(result)) {
-            return helper.relayFailure(result);
+            return helper.fail();
         }
 
         const alternation = result.value;

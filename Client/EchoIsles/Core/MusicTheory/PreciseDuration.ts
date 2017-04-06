@@ -63,7 +63,7 @@ export module PreciseDuration {
         return first.compareTo(second);
     }
 
-    export function createComparer<T>(selector: (e: T) => PreciseDuration, descending = fail) {
+    export function createComparer<T>(selector: (e: T) => PreciseDuration, descending = false) {
         return (a: T, b: T): number => descending
                                        ? - selector(a).compareTo(selector(b))
                                        : selector(a).compareTo(selector(b));

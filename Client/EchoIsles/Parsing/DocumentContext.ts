@@ -27,8 +27,9 @@ export class DocumentContext {
 
         const lastBar = this.bars[this.bars.length - 1];
         bar.previousBar = lastBar;
-        if (lastBar)
+        if (lastBar) {
             lastBar.nextBar = bar;
+        }
 
         bar.logicalPreviousBar = lastBar;   // todo: handle alternation
 

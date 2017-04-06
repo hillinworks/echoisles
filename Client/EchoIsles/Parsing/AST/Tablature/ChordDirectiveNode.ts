@@ -21,14 +21,17 @@ export class ChordDirectiveNode extends DirectiveNode {
     }
 
     apply(context: DocumentContext): ParseResultMaybeEmpty<void> {
-        const result = this.compile(context);
-        if (!ParseHelper.isSuccessful(result)) {
-            return ParseHelper.relayState(result);
+        const helper = new ParseHelper();
+        const result = helper.absorb(this.compile(context));
+
+        if (ParseHelper.isSuccessful(result)) {
+            context.alterDocumentState(state => (state as TablatureState).definedChords.add(result.value));
+            return helper.voidSuccess();
+        } else if (ParseHelper.isFailed(result)) {
+            return helper.fail();
+        } else {
+            return helper.empty();
         }
-
-        context.alterDocumentState(state => (state as TablatureState).definedChords.add(result.value));
-
-        return ParseHelper.voidSuccess;
     }
 
     private compile(context: DocumentContext): ParseResultMaybeEmpty<ChordDefinition> {
@@ -40,9 +43,9 @@ export class ChordDirectiveNode extends DirectiveNode {
             return helper.empty();
         }
 
-        const result = this.fingering.compile(context);
+        const result = helper.absorb(this.fingering.compile(context));
         if (!ParseHelper.isSuccessful(result)) {
-            return helper.relayFailure(result);
+            return helper.fail();
         }
 
         const element = new ChordDefinition();
@@ -59,11 +62,13 @@ export class ChordDirectiveNode extends DirectiveNode {
 
 export module ChordDirectiveNode {
     export function parseBody(scanner: Scanner): ParseResult<ChordDirectiveNode> {
+
+        const helper = new ParseHelper();
         const node = new ChordDirectiveNode();
 
         scanner.skipWhitespaces();
 
-        const chordName = LiteralParsers.readChordName(scanner);
+        const chordName = helper.absorb(LiteralParsers.readChordName(scanner));
         if (!ParseHelper.isSuccessful(chordName) || chordName.value!.value.length === 0) {
             return ParseHelper.fail(scanner.lastReadRange, Messages.Error_MissingChordName);
         }
@@ -79,16 +84,16 @@ export module ChordDirectiveNode {
 
         scanner.skipOptional(":", true);
 
-        const fingering = ChordFingeringNode.parse(scanner, s => s.isEndOfLine);
+        const fingering = helper.absorb(ChordFingeringNode.parse(scanner, s => s.isEndOfLine));
         if (!ParseHelper.isSuccessful(fingering)) {
-            return ParseHelper.relayFailure(fingering);
+            return helper.fail();
         }
 
         if (fingering.value!.fingerings.length === 0) {
-            return ParseHelper.fail(scanner.lastReadRange, Messages.Error_ChordCommandletMissingFingering);
+            return helper.fail(scanner.lastReadRange, Messages.Error_ChordCommandletMissingFingering);
         }
 
         node.fingering = fingering.value!;
-        return ParseHelper.success(node);
+        return helper.success(node);
     }
 }

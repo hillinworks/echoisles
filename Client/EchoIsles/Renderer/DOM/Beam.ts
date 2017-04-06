@@ -1,4 +1,5 @@
-﻿import { BeatWidgetBase } from "./BeatWidgetBase";
+﻿import { BeatWidget } from "./BeatWidget";
+import { BeatWidgetBase } from "./BeatWidgetBase";
 import { Beam as CoreBeam } from "../../Core/Sheet/Beam";
 import { BeamSlope } from "./BeamSlope";
 import { Beat } from "./Beat";
@@ -11,6 +12,7 @@ import { Style } from "../Style";
 import { BaseNoteValue } from "../../Core/MusicTheory/BaseNoteValue";
 import { Vector } from "../Vector";
 import { BeamContext } from "./BeamContext";
+
 
 function* getAllBeats(beam: Beam): Iterable<Beat> {
     for (let element of beam.elements) {
@@ -67,7 +69,7 @@ export class Beam extends BeatWidgetBase {
     }
 
     private initializeComponents() {
-        this.elements.push(...select(this.beam.elements, e => BeatWidgetBase.create(this, e)));
+        this.elements.push(...select(this.beam.elements, e => BeatWidget.create(this, e)));
         this.connector = new BeamConnector(this, this.beam.beatNoteValue);
     }
 
@@ -83,6 +85,8 @@ export class Beam extends BeatWidgetBase {
             element.measure(availableSize);
             bounds = bounds.union(Rect.create(element.barRelatedPosition, element.desiredSize));
         }
+
+        this.barRelatedPosition = this.firstBeat.barRelatedPosition;
 
         this._desiredEpitaxySize = new Size(
             bounds.width,

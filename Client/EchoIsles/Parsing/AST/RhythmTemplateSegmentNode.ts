@@ -12,14 +12,15 @@ export class RhythmTemplateSegmentNode extends RhythmSegmentNodeBase {
     }
 
     compile(context: DocumentContext): ParseResult<RhythmTemplateSegment> {
+        const helper = new ParseHelper();
         const element = new RhythmTemplateSegment();
         element.range = this.range;
-        const fillRhythmSegmentVoicesResult = this.fillRhythmSegmentVoices(context, element);
+        const fillRhythmSegmentVoicesResult = helper.absorb(this.fillRhythmSegmentVoices(context, element));
         if (!ParseHelper.isSuccessful(fillRhythmSegmentVoicesResult)) {
-            return ParseHelper.relayFailure(fillRhythmSegmentVoicesResult);
+            return helper.fail();
         }
 
-        return ParseHelper.success(element);
+        return helper.success(element);
     }
 
     valueEquals(other: RhythmTemplateSegment): boolean {
@@ -46,12 +47,13 @@ export class RhythmTemplateSegmentNode extends RhythmSegmentNodeBase {
 
 export module RhythmTemplateSegmentNode {
     export function parse(scanner: Scanner, optionalBrackets = false): ParseResult<RhythmTemplateSegmentNode> {
+        const helper = new ParseHelper();
         const node = new RhythmTemplateSegmentNode();
-        const baseParseResult = RhythmSegmentNodeBase.parseRhythmDefinition(scanner, node, optionalBrackets);
+        const baseParseResult = helper.absorb(RhythmSegmentNodeBase.parseRhythmDefinition(scanner, node, optionalBrackets));
         if (!ParseHelper.isSuccessful(baseParseResult)) {
-            return ParseHelper.relayFailure(baseParseResult);
+            return helper.fail();
         }
 
-        return ParseHelper.success(node, ...baseParseResult.messages);
+        return helper.success(node);
     }
 }

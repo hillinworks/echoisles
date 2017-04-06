@@ -92,34 +92,6 @@ export class ParseHelper {
         return result.result === ParseResultType.Failed;
     }
 
-    /**
-     * relay a parse result's result and messages, but omit its value
-     * @param result the parse result to relay
-     */
-    static relayState(result: ParseNonSuccessfulResult): ParseNonSuccessfulResult {
-        if (ParseHelper.isEmpty(result)) {
-            return {
-                result: result.result,
-                value: undefined,
-                messages: result.messages
-            };
-        } else {
-            return {
-                result: result.result,
-                messages: result.messages
-            };
-        }
-    }
-
-    static relayFailure(result: IParseFailedResult): IParseFailedResult {
-
-        return {
-            result: result.result,
-            messages: result.messages
-        };
-
-    }
-
     private readonly messages = new Array<LogMessage>();
 
     success<T>(value: T): IParseSuccessResult<T> {
@@ -128,6 +100,10 @@ export class ParseHelper {
             value: value,
             messages: this.messages
         };
+    }
+
+    voidSuccess(): IParseSuccessResult<void> {
+        return this.success(undefined);
     }
 
     fail(range?: TextRange, message?: string, ...args: any[]): IParseFailedResult {

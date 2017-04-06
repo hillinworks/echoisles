@@ -4,8 +4,9 @@ import { Parser } from "../../EchoIsles/Parsing/Parser";
 import { Http } from "@angular/http";
 import { ParseHelper } from "../../EchoIsles/Parsing/ParseResult";
 import "rxjs/add/operator/toPromise";
-// ReSharper disable once UnusedLocalImport
-import { fabric } from 'fabric';
+// ReSharper disable once WrongRequireRelativePath
+import { fabric } from "fabric";
+import { render } from "../../EchoIsles/Renderer/Renderer";
 
 @Component({
     selector: 'appc-home',
@@ -30,8 +31,9 @@ export class HomeComponent implements OnInit {
 
         if (ParseHelper.isSuccessful(result)) {
             const document = result.value;
-            alert(JSON.stringify(document));
-
+            render(document, this.fabricCanvas);
+        } else {
+            alert(result.messages.map(m => m.toString()).join("\n"));
         }
     }
 

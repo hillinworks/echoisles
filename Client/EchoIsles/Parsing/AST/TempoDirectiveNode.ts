@@ -16,14 +16,15 @@ export class TempoDirectiveNode extends DirectiveNode {
     beats: LiteralNode<number>;
 
     apply(context: DocumentContext): ParseResultMaybeEmpty<void> {
-        const result = this.compile(context);
+        const helper = new ParseHelper();
+        const result = helper.absorb(this.compile(context));
         if (!ParseHelper.isSuccessful(result)) {
-            return ParseHelper.relayState(result);
+            return helper.fail();
         }
 
         context.alterDocumentState(state => state.tempoSignature = result.value);
 
-        return ParseHelper.voidSuccess;
+        return helper.voidSuccess();
     }
 
     private compile(context: DocumentContext): ParseResultMaybeEmpty<TempoSignature> {
@@ -31,13 +32,13 @@ export class TempoDirectiveNode extends DirectiveNode {
 
         if (this.valueEquals(context.documentState.tempoSignature)) {
             helper.suggestion(this.range, Messages.Suggestion_UselessTempoInstruction);
-            return ParseHelper.empty();
+            return helper.empty();
         }
 
         const element = new TempoSignature();
         element.range = this.range;
         element.tempo = new Tempo(this.beats.value, LiteralNode.valueOrDefault(this.noteValue, BaseNoteValue.Quater));
-        return ParseHelper.success(element);
+        return helper.success(element);
     }
 
     valueEquals(other: TempoSignature): boolean {

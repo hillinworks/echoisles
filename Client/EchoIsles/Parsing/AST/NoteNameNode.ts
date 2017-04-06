@@ -7,28 +7,29 @@ import { Scanner } from "../Scanner";
 import { LiteralParsers } from "../LiteralParsers";
 import { Messages } from "../Messages";
 import { TextRange } from "../../Core/Parsing/TextRange";
-import { ParseResult, ParseHelper, ParseResultType } from "../ParseResult";
+import { ParseResult, ParseHelper } from "../ParseResult";
 
 export class NoteNameNode extends Node {
 
     static parse(scanner: Scanner): ParseResult<NoteNameNode> {
+        const helper = new ParseHelper();
         const anchor = scanner.makeAnchor();
 
-        const baseNoteName = LiteralParsers.readBaseNoteName(scanner);
+        const baseNoteName = helper.absorb(LiteralParsers.readBaseNoteName(scanner));
         if (!ParseHelper.isSuccessful(baseNoteName)) {
-            return ParseHelper.fail(scanner.lastReadRange, Messages.Error_InvalidNoteName);
+            return helper.fail(scanner.lastReadRange, Messages.Error_InvalidNoteName);
         }
 
-        const accidental = LiteralParsers.readAccidental(scanner);
+        const accidental = helper.absorb(LiteralParsers.readAccidental(scanner));
 
         let accidentalNode: LiteralNode<Accidental> | undefined = undefined;
         if (ParseHelper.isSuccessful(accidental)) {
             accidentalNode = accidental.value;
-        } else if (accidental.result === ParseResultType.Failed) {
-            return ParseHelper.fail(scanner.lastReadRange, Messages.Error_InvalidAccidental);
+        } else if (ParseHelper.isFailed(accidental)) {
+            return helper.fail(scanner.lastReadRange, Messages.Error_InvalidAccidental);
         }
 
-        return ParseHelper.success(new NoteNameNode(anchor.range, baseNoteName.value!, accidentalNode));
+        return helper.success(new NoteNameNode(anchor.range, baseNoteName.value!, accidentalNode));
     }
 
     constructor(range: TextRange,

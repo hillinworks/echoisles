@@ -22,8 +22,10 @@ import { Rest } from "./Rest";
 import { VoicePart } from "../../Core/Sheet/VoicePart";
 import { VerticalDirection } from "../../Core/Style/VerticalDirection";
 import { DocumentRow } from "./DocumentRow";
+import { BarChild } from "./BarChild";
+import { IBarDescendant } from "./IBarDescendant";
 
-export class BarColumn extends Bar.Child {
+export class BarColumn extends BarChild {
 
     /** the bounds to layout only the notes and and their accessories, but not chord diagram or lyrics segment */
     private _relativeNoteElementsBounds: Rect;
@@ -318,7 +320,7 @@ export class BarColumn extends Bar.Child {
 
 export module BarColumn {
 
-    export abstract class Child extends WidgetBase implements Bar.IDescendant {
+    export abstract class Child extends WidgetBase implements IBarDescendant {
 
         /** the position relative to the baseline of owner bar column */
         relativePosition: Point;

@@ -30,15 +30,16 @@ export abstract class RhythmSegmentNodeBase extends Node {
     }
 
     protected fillRhythmSegmentVoices(context: DocumentContext, rhythmSegment: RhythmSegmentBase): ParseResult<void> {
+        const helper = new ParseHelper();
         const duration = this.duration;
 
         if (this.trebleVoice !== undefined) {
             this.trebleVoice.expectedDuration = duration;
 
-            const result = this.trebleVoice.compile(context, VoicePart.Treble);
+            const result = helper.absorb(this.trebleVoice.compile(context, VoicePart.Treble));
 
             if (!ParseHelper.isSuccessful(result)) {
-                return ParseHelper.relayFailure(result);
+                return helper.fail();
             }
 
             rhythmSegment.trebleVoice = result.value;
@@ -47,10 +48,9 @@ export abstract class RhythmSegmentNodeBase extends Node {
         if (this.bassVoice !== undefined) {
             this.bassVoice.expectedDuration = duration;
 
-            const result = this.bassVoice.compile(context, VoicePart.Bass);
-
+            const result = helper.absorb(this.bassVoice.compile(context, VoicePart.Bass));
             if (!ParseHelper.isSuccessful(result)) {
-                return ParseHelper.relayFailure(result);
+                return helper.fail();
             }
 
             rhythmSegment.bassVoice = result.value;
@@ -105,7 +105,7 @@ export module RhythmSegmentNodeBase {
                     return helper.fail();
                 }
             } else {
-                const voice = VoiceNode.parse(scanner);
+                const voice = helper.absorb(VoiceNode.parse(scanner));
                 if (ParseHelper.isSuccessful(voice)) {
                     node.trebleVoice = voice.value!;
                     scanner.skipWhitespaces();

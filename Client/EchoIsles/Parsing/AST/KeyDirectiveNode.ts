@@ -15,13 +15,14 @@ export class KeyDirectiveNode extends DirectiveNode {
     }
 
     apply(context: DocumentContext): ParseSuccessOrEmptyResult<void> {
-        const result = this.compile(context);
+        const helper = new ParseHelper();
+        const result = helper.absorb(this.compile(context));
         if (!ParseHelper.isSuccessful(result)) {
-            return ParseHelper.empty(...result.messages);
+            return helper.empty();
         }
 
         context.alterDocumentState(state => state.keySignature = result.value);
-        return ParseHelper.voidSuccess;
+        return helper.voidSuccess();
     }
 
     private compile(context: DocumentContext): ParseSuccessOrEmptyResult<KeySignature> {
@@ -42,15 +43,16 @@ export class KeyDirectiveNode extends DirectiveNode {
 
 export module KeyDirectiveNode {
     export function parseBody(scanner: Scanner): ParseResult<KeyDirectiveNode> {
+        const helper = new ParseHelper();
         scanner.skipOptional(":", true);
         const node = new KeyDirectiveNode();
 
-        const noteName = NoteNameNode.parse(scanner);
+        const noteName = helper.absorb(NoteNameNode.parse(scanner));
         if (!ParseHelper.isSuccessful(noteName)) {
-            return ParseHelper.relayFailure(noteName);
+            return helper.fail();
         }
 
         node.key = noteName.value!;
-        return ParseHelper.success(node);
+        return helper.success(node);
     }
 }

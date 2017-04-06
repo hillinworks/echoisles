@@ -1,4 +1,4 @@
-﻿import { DirectiveNode } from "./DirectiveNode";
+import { DirectiveNode } from "./DirectiveNode";
 import { LiteralNode } from "./LiteralNode";
 import { DocumentContext } from "../DocumentContext";
 import { Section } from "../../Core/Sheet/Section";
@@ -11,9 +11,10 @@ export class SectionDirectiveNode extends DirectiveNode {
     sectionName: LiteralNode<string>;
 
     apply(context: DocumentContext): ParseResultMaybeEmpty<void> {
-        const result = this.compile(context);
+        const helper = new ParseHelper();
+        const result = helper.absorb(this.compile(context));
         if (!ParseHelper.isSuccessful(result)) {
-            return ParseHelper.relayState(result);
+            return helper.fail();
         }
 
         context.alterDocumentState(state => {
@@ -21,13 +22,13 @@ export class SectionDirectiveNode extends DirectiveNode {
             state.currentSection = result.value;
         });
 
-        return ParseHelper.voidSuccess;
+        return helper.voidSuccess();
     }
 
     private compile(context: DocumentContext): ParseResultMaybeEmpty<Section> {
         const helper = new ParseHelper();
 
-        if (any(context.documentState.definedSections, this.valueEquals)) {
+        if (any(context.documentState.definedSections, s => this.valueEquals(s))) {
             helper.warning(this.range, Messages.Warning_DuplicatedSectionName, this.sectionName.value);
             return helper.empty();
         }

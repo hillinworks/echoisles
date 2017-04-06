@@ -5,9 +5,10 @@ import { BarNode } from "./BarNode";
 import { DirectiveNodeParser } from "./DirectiveNodeParser";
 import { TablatureContext } from "../Tablature/TablatureContext";
 import { Document } from "../../Core/Sheet/Document";
+import { TopLevelNode } from "./TopLevelNode";
 
 export class DocumentNode extends Node {
-    nodes = new Array<Node>();
+    nodes = new Array<TopLevelNode>();
 
     compile(): ParseResult<Document> {
         const helper = new ParseHelper();
@@ -15,17 +16,17 @@ export class DocumentNode extends Node {
         for (let node of this.nodes) {
             const applyResult = helper.absorb(node.apply(context));
             if (ParseHelper.isFailed(applyResult)) {
-                return ParseHelper.fail();
+                return helper.fail();
             }
         }
 
-        return ParseHelper.success(context.toDocument());
+        return helper.success(context.toDocument());
     }
 }
 
 export module DocumentNode {
 
-    function parseNode(scanner: Scanner): ParseResultMaybeEmpty<Node> {
+    function parseNode(scanner: Scanner): ParseResultMaybeEmpty<TopLevelNode> {
         scanner.skipWhitespaces(false);
         if (scanner.isEndOfInput) {
             return ParseHelper.empty();
@@ -44,12 +45,11 @@ export module DocumentNode {
         const helper = new ParseHelper();
 
         while (!scanner.isEndOfInput) {
-            const node = parseNode(scanner);
+            const node = helper.absorb(parseNode(scanner));
             if (ParseHelper.isSuccessful(node)) {
-                helper.absorb(node);
                 document.nodes.push(node.value);
             } else {
-                return helper.relayFailure(node);
+                return helper.fail();
             }
         }
 

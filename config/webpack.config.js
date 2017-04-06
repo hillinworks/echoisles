@@ -103,7 +103,10 @@ let commonConfig = {
             }
         ),
 
-    ]
+    ],
+    externals: {
+        'angular': 'angular'
+    }
 };
 
 module.exports = commonConfig;

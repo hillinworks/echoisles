@@ -9,6 +9,7 @@ import { Defaults } from "../../Core/Sheet/Tablature/Defaults";
 import { HeightMap } from "./HeightMap";
 import { VoicePart } from "../../Core/Sheet/VoicePart";
 import { Point } from "../Point";
+import {DocumentRowChild} from "./DocumentRowChild";
 const heightMapSampleRate = 1;
 
 export class DocumentRow extends WidgetBase {
@@ -61,7 +62,7 @@ export class DocumentRow extends WidgetBase {
         this.invalidateLayout();
     }
 
-    private *getLayoutChildren(): IterableIterator<DocumentRow.Child> {
+    private *getLayoutChildren(): IterableIterator<DocumentRowChild> {
         for (let i = 0; i < this.barLines.length; ++i) {
             yield this.barLines[i];
 
@@ -153,54 +154,4 @@ export class DocumentRow extends WidgetBase {
     destroy(): void {
         this.barLines.forEach(l => l.destroy());
     }
-}
-
-export module DocumentRow {
-
-    export interface IDecendant {
-        readonly ownerRow: DocumentRow;
-    }
-
-    export abstract class Child extends WidgetBase implements IDecendant {
-
-        private _desiredCeilingSize: number;
-        private _desiredFloorSize: number;
-
-        abstract readonly ownerRow: DocumentRow;
-
-        /** the position relative to owner row */
-        relativePosition: Point;
-
-        /** the relative y position of the first (upper-most) bar line */
-        relativeBaseline: number;
-
-        get desiredCeilingSize(): number {
-            return this._desiredCeilingSize;
-        }
-
-        get desiredFloorSize(): number {
-            return this._desiredFloorSize;
-        }
-
-        protected setDesiredCeilingSize(value: number) {
-            this._desiredCeilingSize = value;
-        }
-
-        protected setDesiredFloorSize(value: number) {
-            this._desiredFloorSize = value;
-        }
-
-        /**
-         * convert a position relative to this widget to a position relative to the owner row
-         */
-        getPositionRelativeToOwnerRow(relativePosition: Point): Point {
-            return this.relativePosition.translate(relativePosition);
-        }
-
-
-        getXRelativeToOwnerRow(x: number): number {
-            return this.relativePosition.x + x;
-        }
-    }
-
 }

@@ -35,21 +35,23 @@ export class TuningDirectiveNode extends DirectiveNode {
 
         context.alterDocumentState(state => (state as TablatureState).tuningSignature = result.value);
 
-        return ParseHelper.voidSuccess;
+        return helper.voidSuccess();
     }
 
     private compile(context: DocumentContext): IParseSuccessResult<TuningSignature> {
+        const helper = new ParseHelper();
         const element = new TuningSignature();
         element.range = this.range;
         element.tuning = new Tuning(LiteralNode.valueOrUndefined(this.name), ...select(this.stringTunings, t => t.toPitch()));
 
-        return ParseHelper.success(element);
+        return helper.success(element);
     }
 }
 
 export module TuningDirectiveNode {
 
     function parseExplicitTuning(scanner: Scanner, helper: ParseHelper, stringTunings: PitchNode[], name?: string): boolean {
+
         while (!scanner.isEndOfLine) {
             const pitch = helper.absorb(PitchNode.parse(scanner));
             if (!ParseHelper.isSuccessful(pitch)) {

@@ -16,15 +16,15 @@ export class TimeDirectiveNode extends DirectiveNode {
     noteValue: LiteralNode<BaseNoteValue>;
 
     apply(context: DocumentContext): ParseResultMaybeEmpty<void> {
-
-        const result = this.compile(context);
+        const helper = new ParseHelper();
+        const result = helper.absorb(this.compile(context));
         if (!ParseHelper.isSuccessful(result)) {
-            return ParseHelper.relayState(result);
+            return helper.fail();
         }
 
         context.alterDocumentState(state => state.timeSignature = result.value);
 
-        return ParseHelper.voidSuccess;
+        return helper.voidSuccess();
     }
 
     private compile(context: DocumentContext): ParseResultMaybeEmpty<TimeSignature> {
@@ -38,14 +38,14 @@ export class TimeDirectiveNode extends DirectiveNode {
         if (context.documentState.timeSignature !== undefined
             && this.valueEquals(context.documentState.timeSignature)) {
             helper.suggestion(this.range, Messages.Suggestion_UselessTimeInstruction);
-            return ParseHelper.empty();
+            return helper.empty();
         }
 
         const element = new TimeSignature();
         element.range = this.range;
         element.time = new Time(this.beats.value, this.noteValue.value);
 
-        return ParseHelper.success(element);
+        return helper.success(element);
     }
 
     valueEquals(other: TimeSignature): boolean {

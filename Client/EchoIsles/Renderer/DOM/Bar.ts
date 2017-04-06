@@ -1,5 +1,4 @@
-﻿import { WidgetBase } from "../WidgetBase";
-import { Bar as CoreBar } from "../../Core/Sheet/Bar";
+﻿import { Bar as CoreBar } from "../../Core/Sheet/Bar";
 import { Voice } from "./Voice";
 import { Size } from "../Size";
 import { VoicePart } from "../../Core/Sheet/VoicePart";
@@ -12,9 +11,9 @@ import { Point } from "../Point";
 import { DocumentRow } from "./DocumentRow";
 import { BarColumn } from "./BarColumn";
 import { Document } from "./Document";
+import { DocumentRowChild } from "./DocumentRowChild";
 
-
-export class Bar extends DocumentRow.Child {
+export class Bar extends DocumentRowChild {
 
     readonly columns = new Array<BarColumn>();
     private readonly columnSpacings = new Array<number>();
@@ -36,12 +35,10 @@ export class Bar extends DocumentRow.Child {
         this.voices.push(...select([this.bar.bassVoice, this.bar.trebleVoice], v => new Voice(this, v)));
     }
 
-    protected measureOverride(availableSize: Size): Size {
-
+    measureWidth(): number {
         // measure all columns first
-        const columnAvailableSize = new Size(Infinity, availableSize.height);
         for (let column of this.columns) {
-            column.measure(columnAvailableSize);
+            column.measure(Size.infinity);
         }
 
         // decide column locations and measure desired width
@@ -82,6 +79,13 @@ export class Bar extends DocumentRow.Child {
 
             desiredWidth = Math.max(x, lastLyricsStop);
         }
+
+        return desiredWidth;
+    }
+
+    protected measureOverride(availableSize: Size): Size {
+
+        const desiredWidth = this.measureWidth();
 
         // measure voices to decide ceiling and floor sizes
         let desiredCeilingSize = 0;
@@ -138,27 +142,5 @@ export class Bar extends DocumentRow.Child {
         this.columns.forEach(c => c.destroy());
         this.columnSpacings.length = this.columns.length - 1;
         this.voices.forEach(v => v.destroy());
-    }
-}
-
-export module Bar {
-    export abstract class Child extends WidgetBase implements IDescendant {
-
-        protected constructor(readonly ownerBar: Bar) {
-            super(ownerBar);
-        }
-
-        get ownerRow(): DocumentRow {
-            return this.ownerBar.ownerRow;
-        }
-
-    }
-
-    export interface IDescendant extends DocumentRow.IDecendant {
-        readonly ownerBar: Bar;
-    }
-
-    export interface IBarRelated {
-        barRelatedPosition: Point;
     }
 }

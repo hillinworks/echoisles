@@ -1,4 +1,5 @@
-﻿import { Voice as CoreVoice } from "../../Core/Sheet/Voice";
+﻿import { BeatWidget } from "./BeatWidget";
+import { Voice as CoreVoice } from "../../Core/Sheet/Voice";
 import { BeatWidgetBase } from "./BeatWidgetBase";
 import { select } from "../../Core/Utilities/LinqLite";
 import { Bar } from "./Bar";
@@ -9,8 +10,9 @@ import { VerticalDirection } from "../../Core/Style/VerticalDirection";
 import { Style } from "../Style";
 import { Defaults } from "../../Core/Sheet/Tablature/Defaults";
 import { HeightMap } from "./HeightMap";
+import { BarChild } from "./BarChild";
 
-export class Voice extends Bar.Child {
+export class Voice extends BarChild {
 
     private _desiredEpitaxySize: number;
 
@@ -59,7 +61,7 @@ export class Voice extends Bar.Child {
     }
 
     private initializeComponents() {
-        this.beatWidgets.push(...select(this.voice.elements, e => BeatWidgetBase.create(this, e)));
+        this.beatWidgets.push(...select(this.voice.elements, e => BeatWidget.create(this, e)));
     }
 
     protected measureOverride(availableSize: Size): Size {
@@ -86,11 +88,5 @@ export class Voice extends Bar.Child {
 
     destroy() {
         this.destroyChildren(this.beatWidgets);
-    }
-}
-
-export module Voice {
-    export interface IDescendant extends Bar.IDescendant {
-        readonly ownerVoice: Voice;
     }
 }

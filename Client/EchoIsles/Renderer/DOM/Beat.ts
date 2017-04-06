@@ -18,7 +18,6 @@ import { Ornament } from "../../Core/MusicTheory/Ornament";
 import { Tremolo } from "./Tremolo";
 import { NoteRepetition } from "../../Core/MusicTheory/NoteRepetition";
 import { Rect } from "../Rect";
-import { Bar } from "./Bar";
 import { Vector } from "../Vector";
 import { WidgetBase } from "../WidgetBase";
 import { ArtificialHarmonicsMarker } from "./ArtificialHarmonicsMarker";
@@ -26,6 +25,7 @@ import { L } from "../../Core/Utilities/LinqLite";
 import { NoteEffectTechnique } from "../../Core/MusicTheory/NoteEffectTechnique";
 import { TablatureState } from "../../Core/Sheet/Tablature/TablatureState";
 import { VerticalDirection } from "../../Core/Style/VerticalDirection";
+import {IBarRelated} from "./IBarRelated";
 
 export class Beat extends BeatWidgetBase {
 
@@ -58,7 +58,7 @@ export class Beat extends BeatWidgetBase {
         return new Size(this.desiredSize.width, height);
     }
 
-    private *getAllChildren(): Iterable<WidgetBase & Bar.IBarRelated> {
+    private *getAllChildren(): Iterable<WidgetBase & IBarRelated> {
         if (this.stem) {
             yield this.stem;
         }
@@ -277,7 +277,7 @@ export class Beat extends BeatWidgetBase {
         return this.desiredSize;
     }
 
-    private layoutModifierLike(modifier: WidgetBase & Bar.IBarRelated, availableSize: Size, bounds: Rect): Rect {
+    private layoutModifierLike(modifier: WidgetBase & IBarRelated, availableSize: Size, bounds: Rect): Rect {
 
         const xRelativeToRow
             = this.ownerBar.getXRelativeToOwnerRow(

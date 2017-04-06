@@ -1,7 +1,8 @@
-﻿import { BarColumn } from "./BarColumn";
-import { IChordFingering } from "../../Core/Sheet/Tablature/IChordFingering";
+﻿import { IChordFingering } from "../../Core/Sheet/Tablature/IChordFingering";
 import { Beat as CoreBeat } from "../../Core/Sheet/Beat";
-export abstract class NoteBase extends BarColumn.Child {
+import {BarColumnChild} from "./BarColumnChild";
+
+export abstract class NoteBase extends BarColumnChild {
     abstract get isHarmonics(): boolean;
     abstract get string(): number;
     abstract get ownerBeat(): CoreBeat;

@@ -6,12 +6,12 @@ import { IWidgetRoot } from "./WidgetRoot";
 export class WidgetBase {
 
     private _isLayoutInvalidated: boolean;
-    private _position: Point;
-    private _desiredSize: Size;
-    private _renderSize: Size;
+    private _position = Point.NaN;
+    private _desiredSize = Size.zero;
+    private _renderSize = Size.zero;
 
-    private availableSize: Size;
-    private finalRect: Rect;
+    private availableSize = Size.zero;
+    private finalRect = Rect.zero;
 
     constructor(protected readonly parent?: WidgetBase) {
 

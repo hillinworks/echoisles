@@ -1,4 +1,4 @@
-﻿import { VoicePart } from "../../Core/Sheet/VoicePart";
+import { VoicePart } from "../../Core/Sheet/VoicePart";
 import { BaseNoteValue } from "../../Core/MusicTheory/BaseNoteValue";
 import { Voice } from "../../Core/Sheet/Voice";
 import { Beam } from "../../Core/Sheet/Beam";
@@ -192,8 +192,8 @@ export class BeatArranger {
     }
 
     private startRootBeam(tuplet?: number): void {
-        if (!this.currentBeam) {
-            throw new Error("currentBeam is undefined");
+        if (this.currentBeam) {
+            throw new Error("currentBeam is not undefined");
         }
 
         this.currentBeam = new Beam(BaseNoteValue.half(this.beamNoteValue), this.ownerVoice);

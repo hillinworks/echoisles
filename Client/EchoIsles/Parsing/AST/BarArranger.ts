@@ -31,7 +31,7 @@ export class BarArranger {
     }
 
     private arrangeBeatsAndNotes(): void {
-        for (let segment of this.bar.rhythm.segments) {
+        for (let segment of this.bar.rhythm!.segments) {
             if (segment.bassVoice !== undefined) {
                 this.arrangeBeatsAndNotesFor(segment.bassVoice);
             }
@@ -60,7 +60,7 @@ export class BarArranger {
     private arrangeColumns(): void {
         let lyricsSegmentIndex = 0;
 
-        for (let segment of this.bar.rhythm.segments) {
+        for (let segment of this.bar.rhythm!.segments) {
             if (segment.isOmittedByTemplate)
                 continue;
 
@@ -152,7 +152,7 @@ export class BarArranger {
         const bassBeatArranger = new BeatArranger(this.context.documentState.time.noteValue, this.bar.bassVoice);
         const trebleBeatArranger = new BeatArranger(this.context.documentState.time.noteValue, this.bar.trebleVoice);
 
-        for (let segment of this.bar.rhythm.segments) {
+        for (let segment of this.bar.rhythm!.segments) {
             if (segment.isOmittedByTemplate)
                 continue;
 

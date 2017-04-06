@@ -29,9 +29,9 @@ export class VoiceNode extends Node {
         context.currentVoice = voice;
 
         for (let beat of this.beats) {
-            const result = beat.compile(context, voice);
+            const result = helper.absorb(beat.compile(context, voice));
             if (!ParseHelper.isSuccessful(result)) {
-                return helper.relayFailure(result);
+                return helper.fail();
             }
 
             voice.beats.push(result.value);
@@ -97,7 +97,7 @@ export module VoiceNode {
                 break;
             }
 
-            helper.absorb(beat);
+            helper.absorb(beat); // don't absorb directly because we are just trying
 
             node.beats.push(beat.value!);
             scanner.skipWhitespaces();

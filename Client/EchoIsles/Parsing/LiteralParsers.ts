@@ -94,7 +94,8 @@ export module LiteralParsers {
     }
 
     export function readAccidental(scanner: Scanner): ParseResultMaybeEmpty<LiteralNode<Accidental>> {
-        const accidentalText = scanner.readAnyPatternOf("\\#\\#",
+        const accidentalText = scanner.readAnyPatternOf(
+            "\\#\\#",
             "bb",
             "♯♯",
             "♭♭",

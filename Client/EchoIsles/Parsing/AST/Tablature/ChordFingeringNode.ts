@@ -122,15 +122,14 @@ export module ChordFingeringNode {
 
                             scanner.skipWhitespaces();
 
-                            const importancy = ExistencyNode.parseCharExistency(scanner, "!");
+                            const importancy = helper.absorb(ExistencyNode.parseCharExistency(scanner, "!"));
                             if (ParseHelper.isSuccessful(importancy)) {
                                 note.importancy = importancy.value;
                                 scanner.skipWhitespaces();
                             }
 
                             if (!scanner.expectChar(">")) {
-                                return helper.fail(scanner.textPointer.toRange(),
-                                    Messages.Error_ChordFingerIndexNotEnclosed);
+                                return helper.fail(scanner.textPointer.toRange(), Messages.Error_ChordFingerIndexNotEnclosed);
                             }
                         }
                     }

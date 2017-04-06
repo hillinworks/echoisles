@@ -1,9 +1,9 @@
 ﻿import { WidgetBase } from "../WidgetBase";
 import { Point } from "../Point";
 import { BaseNoteValue } from "../../Core/MusicTheory/BaseNoteValue";
-import { Bar } from "./Bar";
+import {IBarRelated} from "./IBarRelated";
 
-export class Flag extends WidgetBase implements Bar.IBarRelated {
+export class Flag extends WidgetBase implements IBarRelated {
 
     barRelatedPosition: Point;
 

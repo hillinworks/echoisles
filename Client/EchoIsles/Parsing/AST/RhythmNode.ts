@@ -23,9 +23,9 @@ export class RhythmNode extends Node {
         let duration = PreciseDuration.zero;
 
         for (let segment of this.segments) {
-            const result = segment.compile(context);
+            const result = helper.absorb(segment.compile(context));
             if (!ParseHelper.isSuccessful(result)) {
-                return helper.relayFailure(result);
+                return helper.fail();
             }
 
             rhythm.segments.push(result.value);
@@ -49,6 +49,7 @@ export module RhythmNode {
     }
 
     export function parse(scanner: Scanner, endOfBarPredicate: Scanner.Predicate): ParseResult<RhythmNode> {
+        const helper = new ParseHelper();
         const node = new RhythmNode();
 
         scanner.skipWhitespaces();
@@ -56,9 +57,9 @@ export module RhythmNode {
         const anchor = scanner.makeAnchor();
 
         while (!isEndOfRhythm(scanner) && !endOfBarPredicate(scanner)) {
-            const segment = RhythmSegmentNode.parse(scanner);
+            const segment = helper.absorb(RhythmSegmentNode.parse(scanner));
             if (!ParseHelper.isSuccessful(segment)) {
-                return ParseHelper.relayFailure(segment);
+                return helper.fail();
             }
 
             node.segments.push(segment.value);
@@ -67,7 +68,7 @@ export module RhythmNode {
 
         node.range = anchor.range;
 
-        return ParseHelper.success(node);
+        return helper.success(node);
     }
 
 }

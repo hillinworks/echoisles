@@ -19,8 +19,8 @@ export class TablatureState extends DocumentState {
 
     readonly definedChords = new SealableCollection<ChordDefinition>();
 
-    private _tuningSignature: TuningSignature;
-    private _rhythmTemplate: RhythmTemplate;
+    private _tuningSignature?: TuningSignature;
+    private _rhythmTemplate?: RhythmTemplate;
 
     get capoFretOffsets(): number[] {
         return this._capoFretOffsets;
@@ -36,20 +36,20 @@ export class TablatureState extends DocumentState {
         return this._minimumCapoFret;
     }
 
-    get tuningSignature(): TuningSignature {
+    get tuningSignature(): TuningSignature | undefined {
         return this._tuningSignature;
     }
 
-    set tuningSignature(value: TuningSignature) {
+    set tuningSignature(value: TuningSignature | undefined) {
         this.checkSealed();
         this._tuningSignature = value;
     }
 
-    get rhythmTemplate(): RhythmTemplate {
+    get rhythmTemplate(): RhythmTemplate | undefined {
         return this._rhythmTemplate;
     }
 
-    set rhythmTemplate(value: RhythmTemplate) {
+    set rhythmTemplate(value: RhythmTemplate | undefined) {
         this.checkSealed();
         this._rhythmTemplate = value;
     }

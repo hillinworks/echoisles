@@ -40,9 +40,9 @@ export class PatternDirectiveNode extends DirectiveNode {
                 helper.warning(barNode.lyrics.range, Messages.Warning_TemplateBarCannotContainLyrics);
             }
 
-            const result = barNode.compile(context, undefined);
+            const result = helper.absorb(barNode.compile(context, undefined));
             if (!ParseHelper.isSuccessful(result)) {
-                return helper.relayFailure(result);
+                return helper.fail();
             }
 
             templateBars.push(result.value);
@@ -55,10 +55,10 @@ export class PatternDirectiveNode extends DirectiveNode {
             if (!barNode) {
                 context.addBar(templateBar);
             } else {
-                const result = barNode.compile(context, templateBar);
+                const result = helper.absorb(barNode.compile(context, templateBar));
 
                 if (!ParseHelper.isSuccessful(result)) {
-                    return helper.relayFailure(result);
+                    return helper.fail();
                 }
 
                 context.addBar(result.value);
@@ -90,9 +90,9 @@ export module PatternDirectiveNode {
         node.templateBars = new TemplateBarsNode();
 
         while (!scanner.isEndOfInput) {
-            const bar = BarNode.parse(scanner, false);
+            const bar = helper.absorb(BarNode.parse(scanner, false));
             if (!ParseHelper.isSuccessful(bar)) {
-                return helper.relayFailure(bar);
+                return helper.fail();
             }
 
             node.templateBars.bars.push(bar.value!);
@@ -126,9 +126,9 @@ export module PatternDirectiveNode {
         node.instanceBars = new InstanceBarsNode();
 
         while (!scanner.isEndOfInput && scanner.peekChar() !== "}") {
-            const bar = BarNode.parse(scanner, true);
+            const bar = helper.absorb(BarNode.parse(scanner, true));
             if (!ParseHelper.isSuccessful(bar)) {
-                return helper.relayFailure(bar);
+                return helper.fail();
             }
 
             node.instanceBars.bars.push(bar.value!);

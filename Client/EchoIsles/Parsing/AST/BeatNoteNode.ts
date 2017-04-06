@@ -57,43 +57,44 @@ export class BeatNoteNode extends Node {
         element.effectTechniqueParameter = LiteralNode.valueOrUndefined(this.effectTechniqueParameter);
         element.accent = LiteralNode.valueOrDefault(this.accent, NoteAccent.Normal);
 
-        const validateResult = this.validate(context, voicePart, element);
+        const validateResult = helper.absorb(this.validate(context, voicePart, element));
         if (!ParseHelper.isSuccessful(validateResult))
-            return helper.relayFailure(validateResult);
+            return helper.fail();
 
         return helper.success(element);
     }
 
     private validate(context: DocumentContext, voicePart: VoicePart, element: BeatNote): ParseResult<void> {
-        const validateTieResult = this.validateTie(context, element);
-        if (!ParseHelper.isSuccessful(validateTieResult))
-            return ParseHelper.relayFailure(validateTieResult);
-        const validatePreConnectionResult = this.validatePreConnection(context, voicePart, element);
-        if (!ParseHelper.isSuccessful(validatePreConnectionResult))
-            return ParseHelper.relayFailure(validatePreConnectionResult);
-        const validatePostConnectionResult = this.validatePostConnection(context, voicePart, element);
-        if (!ParseHelper.isSuccessful(validatePostConnectionResult))
-            return ParseHelper.relayFailure(validatePostConnectionResult);
-        return ParseHelper.voidSuccess;
+        const helper = new ParseHelper();
+
+        if (!ParseHelper.isSuccessful(helper.absorb(this.validateTie(context, element))))
+            return helper.fail();
+
+        if (!ParseHelper.isSuccessful(helper.absorb(this.validatePreConnection(context, voicePart, element))))
+            return helper.fail();
+
+        if (!ParseHelper.isSuccessful(helper.absorb(this.validatePostConnection(context, voicePart, element))))
+            return helper.fail();
+
+        return helper.voidSuccess();
     }
 
     private validateTie(context: DocumentContext, element: BeatNote): ParseResult<void> {
 
         const helper = new ParseHelper();
 
-        if (this.tie === undefined)
+        if (this.tie === undefined) {
             return helper.success(undefined);
-
-        const retrievePreConnectedNoteResult = this.retrievePreConnectedNote(context, element);
-        if (!ParseHelper.isSuccessful(retrievePreConnectedNoteResult)) {
-            return helper.relayFailure(retrievePreConnectedNoteResult);
         }
 
-        if (this.fret === undefined)
-            element.fret = element.preConnectedNote.fret;
-        else if (this.fret.value !== element.preConnectedNote.fret) {
-            helper.warning(this.fret.range, Messages.Warning_TiedNoteMismatch);
+        if (!ParseHelper.isSuccessful(helper.absorb(this.retrievePreConnectedNote(context, element)))) {
+            return helper.fail();
+        }
 
+        if (this.fret === undefined) {
+            element.fret = element.preConnectedNote.fret;
+        } else if (this.fret.value !== element.preConnectedNote.fret) {
+            helper.warning(this.fret.range, Messages.Warning_TiedNoteMismatch);
             element.preConnection = NoteConnection.None;
         }
 
@@ -138,9 +139,9 @@ export class BeatNoteNode extends Node {
 
             return helper.success(undefined);
         }
-        const retrievePreConnectedNoteResult = this.retrievePreConnectedNote(context, element);
-        if (!ParseHelper.isSuccessful(retrievePreConnectedNoteResult)) {
-            return helper.relayFailure(retrievePreConnectedNoteResult);
+
+        if (!ParseHelper.isSuccessful(helper.absorb(this.retrievePreConnectedNote(context, element)))) {
+            return helper.fail();
         }
 
         switch (this.preConnection.value) {
@@ -283,7 +284,7 @@ export module BeatNoteNode {
         let ghostNoteOpened = scanner.expectChar("(");
 
         // read string number
-        const string = LiteralParsers.readInteger(scanner);
+        const string = helper.absorb(LiteralParsers.readInteger(scanner));
         if (!ParseHelper.isSuccessful(string)) {
             return helper.fail(scanner.lastReadRange, Messages.Error_InvalidStringNumberInStringsSpecifier);
         }

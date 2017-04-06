@@ -23,10 +23,11 @@ export class CapoDirectiveNode extends DirectiveNode {
     }
 
     apply(context: DocumentContext): ParseResultMaybeEmpty<void> {
-        const result = this.compile(context);
+        const helper = new ParseHelper();
+        const result = helper.absorb(this.compile(context));
 
         if (!ParseHelper.isSuccessful(result)) {
-            return ParseHelper.relayFailure(result);
+            return helper.fail();
         }
 
         context.alterDocumentState(state => {
@@ -35,7 +36,7 @@ export class CapoDirectiveNode extends DirectiveNode {
             tablatureState.capoFretOffsets = result.value.offsetFrets(tablatureState.capoFretOffsets);
         });
 
-        return ParseHelper.voidSuccess;
+        return helper.voidSuccess();
     }
 
     private compile(context: DocumentContext): ParseResult<Capo> {
@@ -61,7 +62,7 @@ export module CapoDirectiveNode {
 
         scanner.skipOptional(":", true);
 
-        const position = LiteralParsers.readInteger(scanner);
+        const position = helper.absorb(LiteralParsers.readInteger(scanner));
         if (!ParseHelper.isSuccessful(position)) {
             return helper.fail(scanner.lastReadRange, Messages.Error_InvalidCapoPosition);
         }
@@ -76,9 +77,9 @@ export module CapoDirectiveNode {
 
         if (scanner.peek() === "(") {
 
-            const stringsSpecifier = CapoStringsSpecifierNodeParser.parse(scanner);
+            const stringsSpecifier = helper.absorb(CapoStringsSpecifierNodeParser.parse(scanner));
             if (!ParseHelper.isSuccessful(stringsSpecifier)) {
-                return helper.relayFailure(stringsSpecifier);
+                return helper.fail();
             }
 
             node.stringsSpecifier = stringsSpecifier.value;
