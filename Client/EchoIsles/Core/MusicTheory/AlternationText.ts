@@ -1,4 +1,4 @@
-﻿
+
 export module AlternationText {
     export const noAlternationIndex = 0;
 
@@ -8,19 +8,22 @@ export module AlternationText {
         RomanLower
     }
 
-    const alternationTexts = [
-        /* Arabic */["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-        /* RomanUpper */["Ⅰ", "Ⅱ", "Ⅲ", "Ⅳ", "Ⅴ", "Ⅵ", "Ⅶ", "Ⅷ", "Ⅸ"],
-        /* RomanLower */["ⅰ", "ⅱ", "ⅲ", "ⅳ", "ⅴ", "ⅵ", "ⅶ", "ⅷ", "ⅸ"]
-    ];
-
     const alternationTextIndices: { [key: string]: number } = {};
     const alternationTextTypes: { [key: string]: Type } = {};
 
-    for (let type: Type = 0; type < alternationTexts.length; ++type) {
-        alternationTexts[type].forEach((v, i) => alternationTextIndices[v] = i);
-        alternationTexts[type].forEach((v) => alternationTextIndices[v] = type);
+    function addAlternationTextSet(textSet: string[], type: Type): void {
+        for (let i = 0; i < textSet.length; ++i) {
+            const text = textSet[i];
+            alternationTextIndices[text] = i;
+            alternationTextTypes[text] = type;
+        }
     }
+
+    addAlternationTextSet(["1", "2", "3", "4", "5", "6", "7", "8", "9"], Type.Arabic);
+    addAlternationTextSet(["Ⅰ", "Ⅱ", "Ⅲ", "Ⅳ", "Ⅴ", "Ⅵ", "Ⅶ", "Ⅷ", "Ⅸ"], Type.RomanUpper);
+    addAlternationTextSet(["ⅰ", "ⅱ", "ⅲ", "ⅳ", "ⅴ", "ⅵ", "ⅶ", "ⅷ", "ⅸ"], Type.RomanLower);
+    addAlternationTextSet(["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"], Type.RomanUpper);
+    addAlternationTextSet(["i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix"], Type.RomanLower);
 
     export function parse(text: string): { index: number, type: Type } | undefined {
 

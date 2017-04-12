@@ -1,4 +1,4 @@
-﻿import { BeatModifier } from "../../BeatModifier";
+import { BeatModifier } from "../../BeatModifier";
 
 export enum StrumTechnique {
     None = 0,
@@ -36,6 +36,8 @@ export module StrumTechnique {
                 return BeatModifier.PickstrokeDown;
             case StrumTechnique.PickstrokeUp:
                 return BeatModifier.PickstrokeUp;
+            case StrumTechnique.Rasgueado:
+                return  BeatModifier.Rasgueado;
             default:
                 throw new Error("this techinique is not a beat modifier");
         }

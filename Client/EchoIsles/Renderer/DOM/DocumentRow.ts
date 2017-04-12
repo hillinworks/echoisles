@@ -114,7 +114,7 @@ export class DocumentRow extends WidgetBase {
         sortedBars.sort((a, b) => a.desiredSize.width - b.desiredSize.width);
         let sumFixedWidth = 0;
         let minimumWidth = 0;
-        for (let i = sortedBars.length; i >= 1; ++i) {
+        for (let i = sortedBars.length; i >= 1; --i) {
             minimumWidth = (finalWidth - sumFixedWidth) / i;
             const potentialFixedWidth = sortedBars[i - 1].desiredSize.width;
             if (potentialFixedWidth <= minimumWidth)

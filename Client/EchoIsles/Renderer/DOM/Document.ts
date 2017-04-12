@@ -32,7 +32,7 @@ export class Document extends WidgetBase implements IWidgetRoot {
     }
 
     private initializeComponents(): void {
-        this.bars.push(...select(this.document.bars, this.createBar));
+        this.bars.push(...select(this.document.bars, b => this.createBar(b)));
     }
 
     protected measureOverride(availableSize: Size): Size {
@@ -46,7 +46,8 @@ export class Document extends WidgetBase implements IWidgetRoot {
         for (let row of this.rows) {
             row.measure(remainingSize);
             remainingSize = new Size(remainingSize.width, Math.max(0, remainingSize.height - row.desiredSize.height));
-            desiredSize = new Size(Math.max(desiredSize.width, row.desiredSize.width),
+            desiredSize = new Size(
+                Math.max(desiredSize.width, row.desiredSize.width),
                 desiredSize.height + row.desiredSize.height);
         }
 

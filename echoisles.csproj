@@ -14,8 +14,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="logs\**" />
     <Compile Remove="node_modules\**\*;Client\**\*" />
+    <Content Remove="logs\**" />
     <Content Remove="wwwroot\dist\**\*" />
+    <EmbeddedResource Remove="logs\**" />
+    <None Remove="logs\**" />
   </ItemGroup>
 
   <Target Name="RunWebpack" BeforeTargets="BeforePublish">

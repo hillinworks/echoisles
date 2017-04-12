@@ -14,7 +14,7 @@ import { BarChild } from "./BarChild";
 
 export class Voice extends BarChild {
 
-    private _desiredEpitaxySize: number;
+    private _desiredEpitaxySize = 0;
 
     private readonly beatWidgets = new Array<BeatWidgetBase>();
 

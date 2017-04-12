@@ -3,10 +3,18 @@ import { BarColumn } from "./BarColumn";
 import { NoteBase } from "./NoteBase";
 import { IChordFingering } from "../../Core/Sheet/Tablature/IChordFingering";
 import { Beat as CoreBeat } from "../../Core/Sheet/Beat";
+import { Size } from "../Size";
+import { setPosition, makeStyle, font, align } from "./Utilities";
+import { Style } from "../Style";
+import {Vector} from "../Vector";
 
 export class Note extends NoteBase {
-    constructor(parent: BarColumn, readonly note: CoreNote, readonly isVirtual: boolean) {
+
+    private frettingText: fabric.Text;
+
+    constructor(parent: BarColumn, readonly note: CoreNote, readonly ownerBeat: CoreBeat) {
         super(parent);
+        this.initializeComponents();
     }
 
     get isHarmonics(): boolean {
@@ -17,11 +25,28 @@ export class Note extends NoteBase {
         return this.note.string;
     }
 
-    get ownerBeat(): CoreBeat {
-        return this.note.ownerBeat;
+    get isVirtual(): boolean {
+        return this.ownerBeat.isTied;
     }
 
     matchesChord(fingering: IChordFingering): boolean {
         return this.note.matchesChord(fingering);
+    }
+
+    private initializeComponents() {
+        this.frettingText = new fabric.Text(this.note.fret.toString(),
+            makeStyle(font(Style.current.note.size), align("left", "top", true)));
+        this.root!.canvas.add(this.frettingText);
+    }
+
+    protected measureOverride(availableSize: Size): Size {
+        const margin = Style.current.note.head.margin;
+        return Size.fromSizeLike(this.frettingText.getBoundingRect()).inflate(new Size(margin, margin));
+    }
+
+    protected arrangeOverride(finalSize: Size): Size {
+        const margin = Style.current.note.head.margin;
+        setPosition(this.frettingText, this.position.translate(new Vector(margin, margin)));
+        return Size.fromSizeLike(this.frettingText.getBoundingRect()).inflate(new Size(margin, margin));
     }
 }

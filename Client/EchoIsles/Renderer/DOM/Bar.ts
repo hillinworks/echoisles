@@ -1,4 +1,4 @@
-﻿import { Bar as CoreBar } from "../../Core/Sheet/Bar";
+import { Bar as CoreBar } from "../../Core/Sheet/Bar";
 import { Voice } from "./Voice";
 import { Size } from "../Size";
 import { VoicePart } from "../../Core/Sheet/VoicePart";
@@ -6,18 +6,20 @@ import { Style } from "../Style";
 import { VerticalDirection } from "../../Core/Style/VerticalDirection";
 import { Defaults } from "../../Core/Sheet/Tablature/Defaults";
 import { Rect } from "../Rect";
-import { select } from "../../Core/Utilities/LinqLite";
+import { select, repeat } from "../../Core/Utilities/LinqLite";
 import { Point } from "../Point";
 import { DocumentRow } from "./DocumentRow";
 import { BarColumn } from "./BarColumn";
 import { Document } from "./Document";
 import { DocumentRowChild } from "./DocumentRowChild";
+import { BarHorizontalLine } from "./BarHorizontalLine";
 
 export class Bar extends DocumentRowChild {
 
     readonly columns = new Array<BarColumn>();
     private readonly columnSpacings = new Array<number>();
     private readonly voices = new Array<Voice>();
+    private readonly horizontalLines = new Array<Array<BarHorizontalLine>>();
 
     ownerRow: DocumentRow;
 
@@ -33,6 +35,19 @@ export class Bar extends DocumentRowChild {
     private initializeComponents() {
         this.columns.push(...select(this.bar.columns, c => new BarColumn(this, c)));
         this.voices.push(...select([this.bar.bassVoice, this.bar.trebleVoice], v => new Voice(this, v)));
+
+        for (let i = 0; i < Defaults.strings; ++i) {
+            this.horizontalLines[i] = new Array<BarHorizontalLine>();
+            this.horizontalLines[i].push(new BarHorizontalLine(this));
+        }
+
+        for (let column of this.columns) {
+            for (let i = 0; i < this.horizontalLines.length; ++i) {
+                if (column.isStringObstructed(i)) {
+                    this.horizontalLines[i].push(new BarHorizontalLine(this));
+                }
+            }
+        }
     }
 
     measureWidth(): number {
@@ -44,23 +59,24 @@ export class Bar extends DocumentRowChild {
         // decide column locations and measure desired width
         const barStyle = Style.current.bar;
 
-        let desiredWidth = 0;
+        let desiredWidth = barStyle.horizontalPadding;
 
         if (this.columns.length > 0) {
             const spacingToDuration = barStyle.minBeatSpacing / this.bar.minimumBeatDuration.fixedPointValue;
+            const maxBeatSpacing = barStyle.maxBeatSpacingRatio * barStyle.minBeatSpacing;
 
             const firstColumn = this.columns[0];
-            firstColumn.relativePosition = 0;
-            let x = firstColumn.relativeNoteElementsBounds.width;
-            let lastLyricsStop = firstColumn.lyricsSegment ? firstColumn.lyricsSegment.desiredSize.width : 0;
-            let lastChordStop = firstColumn.chordDiagram ? firstColumn.chordDiagram.desiredSize.width : 0;
+            firstColumn.relativePosition = desiredWidth;
+            let x = desiredWidth + firstColumn.relativeNoteElementsBounds.width;
+            let lastLyricsStop = desiredWidth + (firstColumn.lyricsSegment ? firstColumn.lyricsSegment.desiredSize.width : 0);
+            let lastChordStop = desiredWidth + (firstColumn.chordDiagram ? firstColumn.chordDiagram.desiredSize.width : 0);
 
             for (let i = 1; i < this.columns.length; ++i) {
                 const column = this.columns[i];
 
                 const durationDelta = column.barColumn.position.fixedPointValue
                     - this.columns[i - 1].barColumn.position.fixedPointValue;
-                const spacing = Math.min(spacingToDuration * durationDelta, barStyle.maxBeatSpacingRatio);
+                const spacing = Math.max(Math.min(spacingToDuration * durationDelta, maxBeatSpacing), barStyle.minBeatSpacing);
 
                 x = Math.max(x + spacing,
                     column.lyricsSegment ? lastLyricsStop : 0,
@@ -79,6 +95,8 @@ export class Bar extends DocumentRowChild {
 
             desiredWidth = Math.max(x, lastLyricsStop);
         }
+
+        desiredWidth += barStyle.horizontalPadding;
 
         return desiredWidth;
     }
@@ -112,19 +130,59 @@ export class Bar extends DocumentRowChild {
     }
 
     protected arrangeOverride(finalSize: Size): Size {
-        let xScale = finalSize.width / this.desiredSize.width;
+        const horizontalPadding = Style.current.bar.horizontalPadding;
+
+        const self = this;
+        function calculateXScale() {
+            return (finalSize.width - horizontalPadding * 2) / (self.desiredSize.width - horizontalPadding * 2);
+        }
+
+        let xScale = calculateXScale();
 
         if (xScale < 1) {
             // measure again if the final width is even smaller than we desired
             this.measure(finalSize);
-            xScale = finalSize.width / this.desiredSize.width;
+            xScale = calculateXScale();
         }
 
+        const horizontalLineCarets = [...repeat(0, this.horizontalLines.length)];
+        const horizontalLinePositions = [...repeat(this.position.x, this.horizontalLines.length)];
+
+        const baseline = this.position.y + this.relativeBaseline;
+
+        const contentStartX = this.position.x + horizontalPadding;
+
         for (let column of this.columns) {
-            column.arrange(new Rect(this.position.x + column.relativePosition * xScale,
-                this.position.y + this.relativeBaseline,
+            const scaledRelativePosition = (column.relativePosition - horizontalPadding) * xScale;
+            column.arrange(new Rect(contentStartX + scaledRelativePosition,
+                baseline,
                 column.desiredSize.width,
                 column.desiredSize.height));
+
+            // draw horizontal lines
+            for (let i = 0; i < this.horizontalLines.length; ++i) {
+                const hole = column.getStringHole(i);
+                if (hole.size > 0) {
+                    const horizontalLine = this.horizontalLines[i][horizontalLineCarets[i]];
+                    horizontalLine.arrange(new Rect(horizontalLinePositions[i],
+                        baseline + i * Style.current.bar.lineHeight,
+                        hole.from - horizontalLinePositions[i],
+                        Style.current.bar.horizontalLineThickness));
+
+                    horizontalLinePositions[i] = hole.to;
+                    ++horizontalLineCarets[i];
+                }
+            }
+        }
+
+        // draw horizontal lines till the end
+        for (let i = 0; i < this.horizontalLines.length; ++i) {
+            const horizontalLine = this.horizontalLines[i][horizontalLineCarets[i]];
+            const x = horizontalLinePositions[i];
+            horizontalLine.arrange(new Rect(x,
+                baseline + i * Style.current.bar.lineHeight,
+                this.position.x + finalSize.width - x,
+                Style.current.bar.horizontalLineThickness));
         }
 
         for (let voice of this.voices) {

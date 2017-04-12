@@ -5,8 +5,8 @@ import {IDocumentRowDescendant} from "./IDocumentRowDescendant";
 
 export abstract class DocumentRowChild extends WidgetBase implements IDocumentRowDescendant {
 
-    private _desiredCeilingSize: number;
-    private _desiredFloorSize: number;
+    private _desiredCeilingSize = 0;
+    private _desiredFloorSize = 0;
 
     abstract readonly ownerRow: DocumentRow;
 

@@ -17,7 +17,7 @@ import { render } from "../../EchoIsles/Renderer/Renderer";
     host: hostStyle()
 })
 export class HomeComponent implements OnInit {
-    private fabricCanvas: fabric.Canvas;
+    private fabricCanvas: fabric.StaticCanvas;
 
     constructor(private readonly http: Http) {
 
@@ -25,7 +25,7 @@ export class HomeComponent implements OnInit {
 
     private async loadTablature(): Promise<void> {
 
-        const response = await this.http.get("./samples/city of stars.txt").toPromise();
+        const response = await this.http.get("./samples/temptest.txt").toPromise();
         const source = response.text();
         const result = Parser.parse(source);
 
@@ -45,7 +45,7 @@ export class HomeComponent implements OnInit {
 
     private createCanvas() {
         const canvas = document.getElementById("test_canvas") as HTMLCanvasElement;
-        this.fabricCanvas = new fabric.Canvas(canvas);
+        this.fabricCanvas = new fabric.StaticCanvas(canvas);
     }
 
 } 

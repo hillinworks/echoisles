@@ -241,6 +241,7 @@ export class Beat extends BeatWidgetBase {
 
         this.updateSemiBeamConnectorPositions();
         for (let semiBeam of this.semiBeamConnectors) {
+            semiBeam.barRelatedPosition = this.barRelatedPosition;
             semiBeam.measure(availableSize);
             // todo: count semiBeam's bounds
         }

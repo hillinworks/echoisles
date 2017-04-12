@@ -1,11 +1,25 @@
 ﻿export module Style {
+
     export const current = {
+
+        smufl(size: number): { fontFamily: string, fontSize: number } {
+            return {
+                fontFamily: this.smuflFont,
+                fontSize: size
+            };
+        },
+
+        smuflFont: "Bravura",
+        scale: 1.0,
+
         bar: {
+            horizontalPadding: 24,
             minBeatSpacing: 10,
             maxBeatSpacingRatio: 4,
             lineHeight: 12,
             ceilingSpacing: 12,
-            floorSpacing: 12
+            floorSpacing: 12,
+            horizontalLineThickness: 1
         },
 
         barLine: {
@@ -15,7 +29,9 @@
         note: {
             head: {
                 alternationOffsetWithHarmonics: 20,
-                alternationOffset: 12
+                alternationOffset: 12,
+                margin: 2,
+                capsulePadding: 1
             },
             stem: {
                 standardHeight: 24,
@@ -24,7 +40,8 @@
                 thickness: 1
             },
             tremoloOffset: 12,
-            modifierMargin: 6
+            modifierMargin: 6,
+            size: 12
         },
 
         beam: {

@@ -2,7 +2,7 @@
 import { LyricsSegment } from "./LyricsSegment";
 import { Note } from "./Note";
 import { ChordStrumTechnique } from "./ChordStrumTechnique";
-import { LongNoteEllipse } from "./LongNoteEllipse";
+import { LongNoteCapsule } from "./LongNoteCapsule";
 import { ChordDiagram } from "./ChordDiagram";
 import { L, firstOrUndefined, last, orderBy, any, select, all } from "../../Core/Utilities/LinqLite";
 import { TablatureState } from "../../Core/Sheet/Tablature/TablatureState";
@@ -24,6 +24,7 @@ import { VerticalDirection } from "../../Core/Style/VerticalDirection";
 import { DocumentRow } from "./DocumentRow";
 import { BarChild } from "./BarChild";
 import { IBarDescendant } from "./IBarDescendant";
+import { Range } from "../Range";
 
 export class BarColumn extends BarChild {
 
@@ -33,11 +34,18 @@ export class BarColumn extends BarChild {
     private _lyricsSegment?: LyricsSegment;
     private chordStrumTechnique?: ChordStrumTechnique;
     private _chordDiagram?: ChordDiagram;
-    private readonly longNoteEllipses = new Array<LongNoteEllipse>();
+    private readonly longNoteCapsules = new Array<LongNoteCapsule>();
+
     readonly notes = new Array<NoteBase>();
 
     /** an array representing whether a string has been occupied by a note, maintained by initializeNotes */
     private readonly stringOccupation = new Array<boolean>(Defaults.strings);
+
+    /** an array representing whether a string has been obstructed by a note or a long-note capsule, maintained by initializeNotes */
+    private readonly stringObstruction = new Array<boolean>(Defaults.strings);
+
+    /** an array representing the geometric 'holes' made by note or long-note capsule obstructures. only available after arrange */
+    private readonly stringHoles = new Array<Range>(Defaults.strings);
 
     /** the relative horizontal position to the owner bar */
     relativePosition: number;
@@ -92,47 +100,61 @@ export class BarColumn extends BarChild {
         if (this.chordStrumTechnique && this.allNotesMatchChord) {
             return;
         }
-        const beatsSequence = L(this.barColumn.voiceBeats);
-        this.notes.push(
-            ...beatsSequence
-                .selectMany(b => b.notesDefiner.notes)
-                .select(n => new Note(this, n, n.ownerBeat.isTied)));
+
+        for (let beat of this.barColumn.voiceBeats) {
+            for (let note of beat.notesDefiner.notes) {
+                this.notes.push(new Note(this, note, beat));
+            }
+        }
+
 
         // create rests
         if (all(this.barColumn.voiceBeats, b => b.isRest)) {    // all beats are rests we'll just create one
             this.notes.push(new Rest(this, this.barColumn.voiceBeats[0], Defaults.strings / 2));
         } else { // create individual rests
             this.notes.push(
-                ...beatsSequence.where(b => b.isRest)
+                ...L(this.barColumn.voiceBeats).where(b => b.isRest)
                     .select(b => {
                         const string = VoicePart.getEpitaxyDirection(b.voicePart) === VerticalDirection.Above
                             ? 0
-                            : Defaults.strings;
+                            : Defaults.strings - 1;
                         return new Rest(this, b, string);
                     }));
         }
 
-        this.notes.forEach(n => this.stringOccupation[n.string] = true);
+        this.notes.forEach(n => {
+            this.stringOccupation[n.string] = true;
+            this.stringObstruction[n.string] = true;
+        });
 
-        // create long note ellipses
+        // create long note capsules
         const notes = orderBy(this.notes, n => n.string);
 
-        let ellipseNotes = new Array<Note>();
+        let capsuleNotes = new Array<Note>();
 
-        for (let note of notes) {
-            if (note instanceof Note && note.ownerBeat.noteValue.base >= BaseNoteValue.Half) {
-                ellipseNotes.push(note);
-                continue;
-            }
-
-            if (ellipseNotes.length > 0) {
-                this.longNoteEllipses.push(new LongNoteEllipse(this, ellipseNotes));
-                ellipseNotes = new Array<Note>();
+        const self = this;
+        function addLongNoteCapsule() {
+            const capsule = new LongNoteCapsule(self, capsuleNotes);
+            self.longNoteCapsules.push(capsule);
+            for (let i = capsule.stringRange.min; i <= capsule.stringRange.max; ++i) {
+                self.stringObstruction[i] = true;
             }
         }
 
-        if (ellipseNotes.length > 0) {
-            this.longNoteEllipses.push(new LongNoteEllipse(this, ellipseNotes));
+        for (let note of notes) {
+            if (note instanceof Note && note.ownerBeat.noteValue.base >= BaseNoteValue.Half) {
+                capsuleNotes.push(note);
+                continue;
+            }
+
+            if (capsuleNotes.length > 0) {
+                addLongNoteCapsule();
+                capsuleNotes = new Array<Note>();
+            }
+        }
+
+        if (capsuleNotes.length > 0) {
+            addLongNoteCapsule();
         }
     }
 
@@ -142,7 +164,8 @@ export class BarColumn extends BarChild {
             return;
         }
 
-        let { min: minString, max: maxString } = L(this.notes).where(n => n instanceof Note && !n.isVirtual && !n.note.isTied).minMax(n => n.string);
+        let { min: minString, max: maxString }
+            = L(this.notes).where(n => n instanceof Note && !n.isVirtual && !n.note.isTied).minMax(n => n.string);
 
         if (minString === Number.MAX_VALUE || maxString === Number.MIN_VALUE) {
             let chord: IChordDefinition | undefined = undefined;
@@ -194,6 +217,18 @@ export class BarColumn extends BarChild {
         this._lyricsSegment = new LyricsSegment(this, this.barColumn.lyrics!);
     }
 
+    isStringOccupied(string: number): boolean {
+        return this.stringOccupation[string];
+    }
+
+    isStringObstructed(string: number): boolean {
+        return this.stringObstruction[string];
+    }
+
+    getStringHole(string: number): Range {
+        return this.stringHoles[string];
+    }
+
     private getNoteAlternationOffsetRatio(stringIndex: number): number {
         if (stringIndex === 0) {
             return this.stringOccupation[1] ? -0.25 : 0;
@@ -228,6 +263,7 @@ export class BarColumn extends BarChild {
     }
 
     protected measureOverride(availableSize: Size): Size {
+        // bar column is horizontally center-aligned
         let bounds = Rect.zero;
 
         for (let note of this.notes) {
@@ -239,10 +275,12 @@ export class BarColumn extends BarChild {
             bounds = bounds.union(Rect.create(note.relativePosition, note.desiredSize));
         }
 
-        for (let ellipse of this.longNoteEllipses) {
-            ellipse.measure(availableSize);
-            ellipse.relativePosition = Point.average(select(ellipse.notes, n => n.relativePosition));
-            bounds = bounds.union(Rect.create(ellipse.relativePosition, ellipse.desiredSize));
+        for (let capsule of this.longNoteCapsules) {
+            capsule.measure(availableSize);
+            capsule.relativePosition = Point.average(select(capsule.notes,
+                n => new Point(n.relativePosition.x + n.desiredSize.width / 2,
+                    n.relativePosition.y + n.desiredSize.height / 2)));
+            bounds = bounds.union(Rect.createFromCenter(capsule.relativePosition, capsule.desiredSize));
         }
 
         if (this.chordStrumTechnique) {
@@ -274,14 +312,24 @@ export class BarColumn extends BarChild {
     protected arrangeOverride(finalSize: Size): Size {
         let bounds = Rect.create(this.position);
 
+        for (let i = 0; i < Defaults.strings; ++i) {
+            this.stringHoles[i] = new Range(this.position.x, this.position.x);
+        }
+
         for (let note of this.notes) {
             note.arrange(Rect.create(this.position.translate(note.relativePosition), note.desiredSize));
+            this.stringHoles[note.string] = this.stringHoles[note.string].union(
+                new Range(note.position.x, note.position.x + note.desiredSize.width));
             bounds = bounds.union(Rect.create(note.position, note.renderSize));
         }
 
-        for (let ellipse of this.longNoteEllipses) {
-            ellipse.arrange(Rect.create(this.position.translate(ellipse.relativePosition), ellipse.desiredSize));
-            bounds = bounds.union(Rect.create(ellipse.position, ellipse.renderSize));
+        for (let capsule of this.longNoteCapsules) {
+            capsule.arrange(Rect.create(this.position.translate(capsule.relativePosition), capsule.desiredSize));
+            for (var i = capsule.stringRange.min; i <= capsule.stringRange.max; ++i) {
+                this.stringHoles[i] =
+                    this.stringHoles[i].union(new Range(capsule.position.x - capsule.renderSize.width / 2, capsule.position.x + capsule.renderSize.width / 2));
+            }
+            bounds = bounds.union(Rect.create(capsule.position, capsule.renderSize));
         }
 
         if (this.chordStrumTechnique) {
@@ -312,7 +360,7 @@ export class BarColumn extends BarChild {
             this._lyricsSegment,
             this.chordStrumTechnique,
             this._chordDiagram,
-            this.longNoteEllipses,
+            this.longNoteCapsules,
             this.notes);
     }
 

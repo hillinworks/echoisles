@@ -48,6 +48,13 @@ export class Rect {
         return new Rect(left, top, right - left, bottom - top);
     }
 
+    inflate(size: Size): Rect {
+        return new Rect(this.left - size.width,
+            this.top - size.height,
+            this.width + size.width * 2,
+            this.height + size.height * 2);
+    }
+
     toString(): string {
         return `${this.topLeft} - ${this.bottomRight}`;
     }
@@ -59,6 +66,14 @@ export module Rect {
 
     export function create(topLeft: Point, size = Size.zero): Rect {
         return new Rect(topLeft.x, topLeft.y, size.width, size.height);
+    }
+
+    export function createFromCenter(center: Point, size = Size.zero): Rect {
+        return new Rect(center.x - size.width / 2, center.y - size.height / 2, size.width, size.height);
+    }
+
+    export function fromRectLike(rectLike: { left: number, top: number, width: number, height: number }) {
+        return new Rect(rectLike.left, rectLike.top, rectLike.width, rectLike.height);
     }
 
 }
