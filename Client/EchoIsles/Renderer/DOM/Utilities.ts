@@ -20,8 +20,8 @@ export function align(horizontal: "left" | "center" | "right" = "left", vertical
     };
 }
 
-export function centerAlign() {
-    return align("center", "center");
+export function centerAlign(setTextAlign = false) {
+    return align("center", "center", setTextAlign);
 }
 
 export function stroke(color: string = "black", thickness: number = 1) {

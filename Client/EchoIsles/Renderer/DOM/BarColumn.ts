@@ -268,18 +268,15 @@ export class BarColumn extends BarChild {
 
         for (let note of this.notes) {
             note.measure(availableSize);
-            const desiredSize = note.desiredSize;
             const string = note.string;
-            note.relativePosition = new Point(this.getNoteAlternationOffset(string) - desiredSize.width / 2,
-                Style.current.bar.lineHeight * string - desiredSize.height / 2);
-            bounds = bounds.union(Rect.create(note.relativePosition, note.desiredSize));
+            note.relativePosition = new Point(this.getNoteAlternationOffset(string),
+                Style.current.bar.lineHeight * string);
+            bounds = bounds.union(Rect.createFromCenter(note.relativePosition, note.desiredSize));
         }
 
         for (let capsule of this.longNoteCapsules) {
             capsule.measure(availableSize);
-            capsule.relativePosition = Point.average(select(capsule.notes,
-                n => new Point(n.relativePosition.x + n.desiredSize.width / 2,
-                    n.relativePosition.y + n.desiredSize.height / 2)));
+            capsule.relativePosition = Point.average(select(capsule.notes, n => n.relativePosition));
             bounds = bounds.union(Rect.createFromCenter(capsule.relativePosition, capsule.desiredSize));
         }
 
@@ -319,7 +316,7 @@ export class BarColumn extends BarChild {
         for (let note of this.notes) {
             note.arrange(Rect.create(this.position.translate(note.relativePosition), note.desiredSize));
             this.stringHoles[note.string] = this.stringHoles[note.string].union(
-                new Range(note.position.x, note.position.x + note.desiredSize.width));
+                Range.fromRadius(note.position.x, note.desiredSize.width / 2));
             bounds = bounds.union(Rect.create(note.position, note.renderSize));
         }
 
@@ -327,7 +324,7 @@ export class BarColumn extends BarChild {
             capsule.arrange(Rect.create(this.position.translate(capsule.relativePosition), capsule.desiredSize));
             for (var i = capsule.stringRange.min; i <= capsule.stringRange.max; ++i) {
                 this.stringHoles[i] =
-                    this.stringHoles[i].union(new Range(capsule.position.x - capsule.renderSize.width / 2, capsule.position.x + capsule.renderSize.width / 2));
+                    this.stringHoles[i].union(Range.fromRadius(capsule.position.x, capsule.renderSize.width / 2));
             }
             bounds = bounds.union(Rect.create(capsule.position, capsule.renderSize));
         }

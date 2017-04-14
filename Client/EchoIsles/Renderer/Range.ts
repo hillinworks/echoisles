@@ -19,4 +19,8 @@
 
 export module Range {
     export const zero = new Range(0, 0);
+
+    export function fromRadius(center: number, radius: number): Range {
+        return new Range(center - radius, center + radius);
+    }
 }
