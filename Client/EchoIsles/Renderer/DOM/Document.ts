@@ -2,7 +2,6 @@
 import { WidgetBase } from "../WidgetBase";
 import { DocumentRow } from "./DocumentRow";
 import { Document as CoreDocument } from "../../Core/Sheet/Document";
-import { Bar } from "./Bar";
 import { Bar as CoreBar } from "../../Core/Sheet/Bar";
 import { Size } from "../Size";
 import { Rect } from "../Rect";
@@ -10,6 +9,10 @@ import { Vector } from "../Vector";
 import { IWidgetRoot } from "../WidgetRoot";
 import { select } from "../../Core/Utilities/LinqLite";
 import { Point } from "../Point";
+import { Bar } from "./Bar";
+import { DocumentRowPosition } from "./DocumentRowPosition";
+import { assert } from "../../Core/Utilities/Debug";
+import {Style} from "../Style";
 
 export class Document extends WidgetBase implements IWidgetRoot {
 
@@ -80,9 +83,14 @@ export class Document extends WidgetBase implements IWidgetRoot {
             row.destroy();
         }
 
+        if (this.bars.length === 0) {
+            return;
+        }
+
         this.rows.length = 0;
 
         let currentRow = this.createRow();
+        currentRow.rowPosition = DocumentRowPosition.Head;
         let sumWidth = 0;
 
         for (let bar of this.bars) {
@@ -95,22 +103,23 @@ export class Document extends WidgetBase implements IWidgetRoot {
                 barAdded = true;
             }
 
-            if (width <= sumWidth) {
+            if (width <= sumWidth || Style.current.row.preferredBarsPerRow <= currentRow.barCount) {
                 currentRow.seal(width);
                 currentRow = this.createRow();
+                currentRow.rowPosition = DocumentRowPosition.Body;
+                sumWidth = 0;
 
                 if (!barAdded) {
                     currentRow.addBar(bar);
+                    sumWidth = bar.desiredWidth;
                 }
             }
         }
 
-        if (currentRow.barCount === 0) {
-            currentRow.destroy();
-            --this.rows.length;
-        } else {
-            currentRow.seal(width);
-        }
+        assert(currentRow.barCount > 0);
+        currentRow.rowPosition = DocumentRowPosition.Tail;
+        currentRow.seal(width);
+
     }
 
     destroy() {

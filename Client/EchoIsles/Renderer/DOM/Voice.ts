@@ -11,6 +11,7 @@ import { Style } from "../Style";
 import { Defaults } from "../../Core/Sheet/Tablature/Defaults";
 import { HeightMap } from "./HeightMap";
 import { BarChild } from "./BarChild";
+import {getBarBodyHeight} from "./Utilities";
 
 export class Voice extends BarChild {
 
@@ -33,7 +34,7 @@ export class Voice extends BarChild {
                 this.epitaxyMax = Math.min;
                 break;
             case VerticalDirection.Under:
-                this.relativeEpitaxyBase = Style.current.bar.lineHeight * (Defaults.strings - 1);
+                this.relativeEpitaxyBase = getBarBodyHeight();
                 this.epitaxyMax = Math.max;
                 break;
         }

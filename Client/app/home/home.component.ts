@@ -19,6 +19,8 @@ import { render } from "../../EchoIsles/Renderer/Renderer";
 export class HomeComponent implements OnInit {
     private fabricCanvas: fabric.StaticCanvas;
 
+    messages: string;
+
     constructor(private readonly http: Http) {
 
     }
@@ -29,11 +31,13 @@ export class HomeComponent implements OnInit {
         const source = response.text();
         const result = Parser.parse(source);
 
+        this.messages = result.messages.map(m => m.toString()).join("\n\n");
+
         if (ParseHelper.isSuccessful(result)) {
             const document = result.value;
             render(document, this.fabricCanvas);
         } else {
-            alert(result.messages.map(m => m.toString()).join("\n"));
+            alert(this.messages);
         }
     }
 

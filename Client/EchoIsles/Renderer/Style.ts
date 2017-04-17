@@ -12,6 +12,11 @@
         smuflFont: "Bravura",
         scale: 1.0,
 
+        row: {
+            preferredBarsPerRow: 3,
+            fillEmptySpaceForLastRow: true
+        },
+
         bar: {
             horizontalPadding: 24,
             minBeatSpacing: 10,
@@ -23,7 +28,11 @@
         },
 
         barLine: {
-            margin: 8
+            thinLineThickness: 1,
+            thickLineThickness: 4,
+            lineSpacing: 3,
+            repeatSpacing: 2,
+            repeatDotRadius: 2
         },
 
         note: {

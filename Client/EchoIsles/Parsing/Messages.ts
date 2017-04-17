@@ -254,6 +254,8 @@ export module Messages {
     export const Warning_UnexpectedBarVoice =
         "Unexpected voice, rhythm or chord here, ignored. Please place them before lyrics";
 
+    export const Error_BarExpected = "Bar expected";
+
     export const Suggestion_InconsistentVoiceDuration =
         "This voice is shorter than other voices in this segment, it will be filled with rest";
 
@@ -292,9 +294,11 @@ export module Messages {
     export const Error_DuplicatedAlternationText = "Alternation {0} is already defined";
     export const Error_MissingAlternationTexts = "The following alternation(s) is/are missing: {0}";
 
-    export const Hint_FirstOpenBarLineMissing = "Missing first open bar line, standard line assumed";
-    export const Hint_LastCloseBarLineMissing = "Missing close bar line, end line assumed";
+    export const Suggestion_FirstOpenBarLineMissing = "Missing first open bar line, consider use a standard line (|) here";
+    export const Suggestion_LastCloseBarLineMissing = "Missing close bar line, consider use a final line (||) here";
+    export const Warning_InappropriateCloseBarLine = "Inappropriate close bar line, consider use a final line (||) here";
     export const Warning_BarLineMissing = "Missing bar line, standard line assumed";
+    export const Warning_IncompatibleBarLines = "Incompatible bar lines";
 
     export const Warning_DoubleBarLineCannotBeOpenLine =
         "Double bar line cannot be used as an open bar line, standard line assumed. Try to place it at the end of the previous bar";

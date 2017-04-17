@@ -19,6 +19,7 @@ import { ParseResult, ParseResultMaybeEmpty, ParseHelper } from "../ParseResult"
 import { LiteralParsers } from "../LiteralParsers";
 import { TextRange } from "../../Core/Parsing/TextRange";
 import { all, any, sum } from "../../Core/Utilities/LinqLite";
+import {Lyrics} from "../../Core/Sheet/Lyrics";
 
 function applyRhythmTemplate(template: RhythmTemplate, rhythm: Rhythm | undefined): ParseResult<Rhythm> {
 
@@ -129,6 +130,11 @@ export class BarNode extends TopLevelNode {
         const previousBar = context.currentBar;
         context.currentBar = bar;
 
+        if (previousBar && !BarLine.canMerge(previousBar.closeLine, bar.openLine)) {
+            helper.warning(this.openLine!.range, Messages.Warning_IncompatibleBarLines);
+            bar.openLine = undefined;
+        }
+
         if (this.rhythm === undefined) {
             if (template && template.rhythm) {
                 bar.rhythm = template.rhythm.clone();
@@ -156,7 +162,7 @@ export class BarNode extends TopLevelNode {
             bar.lyrics = undefined;
         } else {
             const result = helper.absorb(this.lyrics.compile(context));
-            if (!ParseHelper.isSuccessful(result)) {
+            if (!ParseHelper.isSuccessful<Lyrics>(result)) {
                 return helper.fail();
             }
 
@@ -193,7 +199,7 @@ export class BarNode extends TopLevelNode {
             }
         }
 
-        return helper.success(undefined);
+        return helper.voidSuccess();
     }
 }
 
@@ -209,8 +215,6 @@ export module BarNode {
 
         scanner.skipWhitespaces();
 
-        let isLyricsRead = false;
-
         function isEndOfBlock(scanner: Scanner): boolean {
             return scanner.isEndOfInput || scanner.peekChar() === "+" || (inBraces && scanner.peekChar() === "}");
         }
@@ -221,13 +225,12 @@ export module BarNode {
 
         while (!isEndOfBlock(scanner)) {
             if (scanner.peekChar() === "@") {
-                if (isLyricsRead) {
+                if (node.lyrics) {
                     return helper.fail(scanner.lastReadRange, Messages.Error_UnexpectedLyrics);
                 }
 
                 const lyrics = helper.absorb(LyricsNode.parse(scanner, isEndOfBar));
                 if (ParseHelper.isSuccessful(lyrics)) {
-                    isLyricsRead = true;
                     node.lyrics = lyrics.value;
                 } else {
                     throw new Error("LyricsNode.parse should not return false");
@@ -243,7 +246,7 @@ export module BarNode {
                 break;
             }
 
-            if (!isLyricsRead && node.rhythm === undefined) {
+            if (node.lyrics === undefined && node.rhythm === undefined) {
                 const rhythm = helper.absorb(RhythmNode.parse(scanner, isEndOfBar));
                 if (ParseHelper.isSuccessful(rhythm)) {
                     node.rhythm = rhythm.value;
@@ -252,6 +255,13 @@ export module BarNode {
             }
 
             break;
+        }
+
+        if (node.lyrics === undefined
+            && node.rhythm === undefined
+            && node.openLine === undefined
+            && node.closeLine === undefined) {
+            return helper.fail(anchor.range, Messages.Error_BarExpected);
         }
 
         node.range = anchor.range;

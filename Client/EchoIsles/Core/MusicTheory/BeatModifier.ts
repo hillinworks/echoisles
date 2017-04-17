@@ -7,6 +7,7 @@
     Fermata = 14,
     PickstrokeDown = 21,
     PickstrokeUp = 22,
+    Rasgueado = 23,
     Trill = 31,
     Mordent = 32,
     LowerMordent = 33,

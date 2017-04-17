@@ -10,7 +10,7 @@
 
 export module BarLine {
     export type OpenType = BarLine.Standard | BarLine.BeginRepeat;
-    export type CloseType = BarLine.Standard | BarLine.Double | BarLine.End | BarLine.EndRepeat;
+    export type CloseType = BarLine.Standard | BarLine.Double | BarLine.End | BarLine.EndRepeat | BarLine.BeginAndEndRepeat;
 
     export function toBarLine(barLine: OpenType | CloseType): BarLine {
         return barLine as BarLine;
@@ -40,6 +40,29 @@ export module BarLine {
 
             default:
                 throw new Error();  // should not reach here
+        }
+    }
+
+    export function canMerge(close?: CloseType, open?: OpenType): boolean {
+        switch (open) {
+            case undefined:
+            case BarLine.Standard:
+                return true;
+
+            case BarLine.BeginRepeat:
+                switch (close) {
+                    case undefined:
+                    case BarLine.Standard:
+                    case BarLine.Double:
+                    case BarLine.End:
+                    case BarLine.EndRepeat:
+                        return true;
+                    default:
+                        return false;
+                }
+
+            default:
+                return false;
         }
     }
 }

@@ -5,7 +5,7 @@ export class TextRange {
     from: TextPointer;
     to: TextPointer;
 
-    private readonly source?: TextSource;
+    readonly source?: TextSource;
 
     constructor(from: TextPointer, toOrLength: TextPointer | number, source?: TextSource) {
         this.from = from;

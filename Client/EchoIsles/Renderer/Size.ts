@@ -1,4 +1,6 @@
-﻿export class Size {
+﻿import {ISizeLike} from "./ISizeLike";
+
+export class Size {
 
     constructor(public readonly width: number, public readonly height: number) { }
 
@@ -25,7 +27,7 @@ export module Size {
     export const zero = new Size(0, 0);
     export const infinity = new Size(Infinity, Infinity);
 
-    export function fromSizeLike(sizeLike: { width: number, height: number }) {
+    export function fromSizeLike(sizeLike: ISizeLike) {
         return new Size(sizeLike.width, sizeLike.height);
     }
 }

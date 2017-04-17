@@ -4,9 +4,8 @@ import { NoteBase } from "./NoteBase";
 import { IChordFingering } from "../../Core/Sheet/Tablature/IChordFingering";
 import { Beat as CoreBeat } from "../../Core/Sheet/Beat";
 import { Size } from "../Size";
-import { setPosition, makeStyle, font, align, centerAlign } from "./Utilities";
+import { setPosition, makeStyle, font, centerAlign } from "./Utilities";
 import { Style } from "../Style";
-import {Vector} from "../Vector";
 
 export class Note extends NoteBase {
 
@@ -36,7 +35,10 @@ export class Note extends NoteBase {
     private initializeComponents() {
         this.frettingText = new fabric.Text(this.note.fret.toString(),
             makeStyle(font(Style.current.note.size), centerAlign(true)));
-        this.root!.canvas.add(this.frettingText);
+
+        if (this.root) {
+            this.root.canvas.add(this.frettingText);
+        }
     }
 
     protected measureOverride(availableSize: Size): Size {
@@ -48,5 +50,11 @@ export class Note extends NoteBase {
         const margin = Style.current.note.head.margin;
         setPosition(this.frettingText, this.position);
         return Size.fromSizeLike(this.frettingText.getBoundingRect()).inflate(new Size(margin, margin));
+    }
+
+    destroy(): void {
+        if (this.root) {
+            this.root.canvas.remove(this.frettingText);
+        }
     }
 }

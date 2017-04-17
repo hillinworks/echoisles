@@ -337,8 +337,17 @@ export module LiteralParsers {
     }
 
     export function readCloseBarLine(scanner: Scanner): ParseSuccessOrEmptyResult<LiteralNode<BarLine.CloseType>> {
+
+        if (scanner.expect(":||:")) {
+            return ParseHelper.success(LiteralNode.create<BarLine.CloseType>(BarLine.BeginAndEndRepeat, scanner.lastReadRange));
+        }
+
         if (scanner.expect(":||")) {
             return ParseHelper.success(LiteralNode.create<BarLine.CloseType>(BarLine.EndRepeat, scanner.lastReadRange));
+        }
+
+        if (scanner.peek(3) === "||:") {    // this is a begin repeat for next bar
+            return ParseHelper.empty();
         }
 
         if (scanner.expect("||")) {

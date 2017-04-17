@@ -16,7 +16,10 @@ export class BarHorizontalLine extends WidgetBase {
     private initializeComponents() {
         this.line = new fabric.Line(undefined,
             makeStyle(align("left", "center"), stroke()));
-        this.root!.canvas.add(this.line);
+
+        if (this.root) {
+            this.root.canvas.add(this.line);
+        }
     }
 
     protected measureOverride(availableSize: Size): Size {
@@ -25,7 +28,13 @@ export class BarHorizontalLine extends WidgetBase {
 
     protected arrangeOverride(finalSize: Size): Size {
         setPosition(this.line, this.position);
-        setSize(this.line, new Size(finalSize.width, 0));
+        setSize(this.line, { width: finalSize.width, height: 0 });
         return new Size(finalSize.width, Style.current.bar.horizontalLineThickness);
     }
+
+destroy(): void {
+    if(this.root) {
+        this.root.canvas.remove(this.line);
+    }
+}
 }

@@ -2,23 +2,29 @@
 import { Bar } from "./Bar";
 import { Size } from "../Size";
 import { Rect } from "../Rect";
-import { BarLine } from "./BarLine";
+import { BarLineBase } from "./BarLines/BarLineBase";
 import { BarLine as CoreBarLine } from "../../Core/MusicTheory/BarLine";
-import { Style } from "../Style";
-import { Defaults } from "../../Core/Sheet/Tablature/Defaults";
 import { HeightMap } from "./HeightMap";
 import { VoicePart } from "../../Core/Sheet/VoicePart";
 import { Point } from "../Point";
-import {DocumentRowChild} from "./DocumentRowChild";
+import { DocumentRowChild } from "./DocumentRowChild";
+import { BarLine } from "./BarLines/BarLine";
+import { getBarBodyHeight } from "./Utilities";
+import { EmptyBar } from "./EmptyBar";
+import { DocumentRowPosition } from "./DocumentRowPosition";
+import { Style } from "../Style";
 const heightMapSampleRate = 1;
 
 export class DocumentRow extends WidgetBase {
 
+    rowPosition: DocumentRowPosition;
+
     private readonly bars = new Array<Bar>();
-    private readonly barLines = new Array<BarLine>();
+    private readonly barLines = new Array<BarLineBase>();
     private readonly heightMaps = new Array<HeightMap>(2);
     private _desiredCeilingSize: number;
     private _desiredFloorSize: number;
+    //private fillBar: EmptyBar;
 
     get barCount(): number {
         return this.bars.length;
@@ -34,9 +40,14 @@ export class DocumentRow extends WidgetBase {
 
     addBar(bar: Bar): void {
         if (this.bars.length === 0) {
-            this.barLines.push(new BarLine(this, CoreBarLine.merge(undefined, bar.bar.openLine)));
+            if (bar.bar.previousBar
+                && bar.bar.previousBar.closeLine === CoreBarLine.BeginAndEndRepeat) {
+                this.barLines.push(BarLine.create(this, CoreBarLine.BeginRepeat));
+            } else {
+                this.barLines.push(BarLine.create(this, CoreBarLine.merge(undefined, bar.bar.openLine)));
+            }
         } else {
-            this.barLines.push(new BarLine(this, CoreBarLine.merge(this.bars[this.bars.length - 1].bar.closeLine, bar.bar.openLine)));
+            this.barLines.push(BarLine.create(this, CoreBarLine.merge(this.bars[this.bars.length - 1].bar.closeLine, bar.bar.openLine)));
         }
 
         this.bars.push(bar);
@@ -44,19 +55,30 @@ export class DocumentRow extends WidgetBase {
     }
 
     seal(width: number): void {
-        this.barLines.push(new BarLine(this, CoreBarLine.merge(this.bars[this.bars.length - 1].bar.closeLine)));
+        const lastBar = this.bars[this.bars.length - 1];
+
+        if (lastBar.bar.closeLine === CoreBarLine.BeginAndEndRepeat) {
+            this.barLines.push(BarLine.create(this, CoreBarLine.EndRepeat));
+        } else {
+            this.barLines.push(BarLine.create(this, CoreBarLine.merge(lastBar.bar.closeLine)));
+        }
 
         // by this time, all the bars should be measured
         let maxBarWidth = 0;
         let sumBarWidth = 0;
         for (let bar of this.bars) {
-            const desiredWidth = bar.desiredSize.width;
+            const desiredWidth = bar.desiredWidth;
             maxBarWidth = Math.max(maxBarWidth, desiredWidth);
             sumBarWidth += desiredWidth;
         }
 
-        if (width - sumBarWidth >= maxBarWidth) {
-            // todo: we have plenty of room left, create an empty bar here
+        if (Style.current.row.fillEmptySpaceForLastRow
+            && this.bars.length < Style.current.row.preferredBarsPerRow
+            && this.rowPosition === DocumentRowPosition.Tail
+            && width - sumBarWidth >= maxBarWidth) {
+            //todo: add an empty bar to fill empty spaces
+            //this.fillBar = new EmptyBar(this);
+            //this.barLines.push(BarLine.create(this, CoreBarLine.Standard));
         }
 
         this.invalidateLayout();
@@ -86,23 +108,42 @@ export class DocumentRow extends WidgetBase {
 
         this.initializeHeightMaps(availableSize.width);
 
-        let desiredWidth = 0;
         this._desiredCeilingSize = 0;
         this._desiredFloorSize = 0;
 
-        for (let child of this.getLayoutChildren()) {
-            child.relativePosition = new Point(desiredWidth, 0);
-            child.measure(new Size(availableSize.width - desiredWidth, availableSize.height));
-            desiredWidth += child.desiredSize.width;
-            this._desiredCeilingSize = Math.max(this._desiredCeilingSize, child.desiredCeilingSize);
-            this._desiredFloorSize = Math.max(this._desiredFloorSize, child.desiredFloorSize);
+        // measure bar lines first
+        for (let barLine of this.barLines) {
+            barLine.measure(new Size(Number.NaN, availableSize.height));
+            this._desiredCeilingSize = Math.max(this._desiredCeilingSize, barLine.desiredCeilingSize);
+            this._desiredFloorSize = Math.max(this._desiredFloorSize, barLine.desiredFloorSize);
+        }
+
+        this.barLines[0].relativePosition = Point.zero;
+        const lastBar = this.barLines[this.barLines.length - 1];
+        lastBar.relativePosition = new Point(availableSize.width - lastBar.desiredSize.width, 0);
+
+        let desiredWidth = 0;
+
+        for (let i = 0; i < this.bars.length; ++i) {
+            const bar = this.bars[i];
+            bar.relativePosition = new Point(desiredWidth, 0);
+            bar.measure(new Size(availableSize.width - desiredWidth, availableSize.height));
+            desiredWidth += bar.desiredSize.width;
+            this._desiredCeilingSize = Math.max(this._desiredCeilingSize, bar.desiredCeilingSize);
+            this._desiredFloorSize = Math.max(this._desiredFloorSize, bar.desiredFloorSize);
+
+            if (i !== this.bars.length - 1) {
+                // place the next bar line in between of this and next bar
+                const nextBarLine = this.barLines[i + 1];
+                nextBarLine.relativePosition = new Point(desiredWidth - nextBarLine.desiredSize.width / 2, 0);
+            }
         }
 
         for (let child of this.getLayoutChildren()) {
             child.relativeBaseline = this._desiredCeilingSize;
         }
 
-        const desiredHeight = Style.current.bar.lineHeight * (Defaults.strings - 1)
+        const desiredHeight = getBarBodyHeight()
             + this._desiredCeilingSize
             + this._desiredFloorSize;
 
@@ -126,26 +167,39 @@ export class DocumentRow extends WidgetBase {
         return minimumWidth;
     }
 
+    private arrangeElement(element: DocumentRowChild, x: number, size: Size) {
+        element.relativePosition = new Point(x, 0);
+        element.relativeBaseline = this.desiredCeilingSize;
+        element.arrange(Rect.create(this.position.translate(element.relativePosition), size));
+    }
+
     protected arrangeOverride(finalSize: Size): Size {
 
         this.initializeHeightMaps(finalSize.width);
 
+        const firstBarLine = this.barLines[0];
+        this.arrangeElement(firstBarLine, 0, firstBarLine.desiredSize);
+
+        const lastBarLine = this.barLines[this.barLines.length - 1];
+        this.arrangeElement(lastBarLine, finalSize.width - lastBarLine.desiredSize.width, lastBarLine.desiredSize);
+
         const minimumBarWidth = this.calculateMinimumBarWidth(finalSize.width);
 
         let renderWidth = 0;
-        for (let child of this.getLayoutChildren()) {
-            let size: Size;
-            if (child instanceof Bar) {
-                size = new Size(Math.max(child.desiredSize.width, minimumBarWidth), finalSize.height);
-            } else {
-                size = new Size(child.desiredSize.width, finalSize.height);
+
+        for (let i = 0; i < this.bars.length; ++i) {
+            const bar = this.bars[i];
+            const size = new Size(Math.max(bar.desiredSize.width, minimumBarWidth), finalSize.height);
+            this.arrangeElement(bar, renderWidth, size);
+            renderWidth += bar.renderSize.width;
+
+            if (i !== this.bars.length - 1) {
+                // place the next bar line in between of this and next bar
+                const nextBarLine = this.barLines[i + 1];
+                this.arrangeElement(nextBarLine,
+                    renderWidth - nextBarLine.desiredSize.width / 2,
+                    nextBarLine.desiredSize);
             }
-
-            child.relativePosition = new Point(renderWidth, 0);
-            child.relativeBaseline = this.desiredCeilingSize;
-            child.arrange(Rect.create(this.position.translate(child.relativePosition), size));
-
-            renderWidth += child.renderSize.width;
         }
 
         return new Size(renderWidth, this.desiredSize.height);

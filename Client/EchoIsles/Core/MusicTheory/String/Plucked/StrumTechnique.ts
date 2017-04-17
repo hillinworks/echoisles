@@ -37,7 +37,7 @@ export module StrumTechnique {
             case StrumTechnique.PickstrokeUp:
                 return BeatModifier.PickstrokeUp;
             case StrumTechnique.Rasgueado:
-                return  BeatModifier.Rasgueado;
+                return BeatModifier.Rasgueado;
             default:
                 throw new Error("this techinique is not a beat modifier");
         }

@@ -8,6 +8,12 @@ export module AlternationText {
         RomanLower
     }
 
+    const standardAlternationTexts = [
+        /* Arabic */["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+        /* RomanUpper */["Ⅰ", "Ⅱ", "Ⅲ", "Ⅳ", "Ⅴ", "Ⅵ", "Ⅶ", "Ⅷ", "Ⅸ"],
+        /* RomanLower */["ⅰ", "ⅱ", "ⅲ", "ⅳ", "ⅴ", "ⅵ", "ⅶ", "ⅷ", "ⅸ"]
+    ];
+
     const alternationTextIndices: { [key: string]: number } = {};
     const alternationTextTypes: { [key: string]: Type } = {};
 
@@ -19,9 +25,9 @@ export module AlternationText {
         }
     }
 
-    addAlternationTextSet(["1", "2", "3", "4", "5", "6", "7", "8", "9"], Type.Arabic);
-    addAlternationTextSet(["Ⅰ", "Ⅱ", "Ⅲ", "Ⅳ", "Ⅴ", "Ⅵ", "Ⅶ", "Ⅷ", "Ⅸ"], Type.RomanUpper);
-    addAlternationTextSet(["ⅰ", "ⅱ", "ⅲ", "ⅳ", "ⅴ", "ⅵ", "ⅶ", "ⅷ", "ⅸ"], Type.RomanLower);
+    addAlternationTextSet(standardAlternationTexts[0], Type.Arabic);
+    addAlternationTextSet(standardAlternationTexts[1], Type.RomanUpper);
+    addAlternationTextSet(standardAlternationTexts[2], Type.RomanLower);
     addAlternationTextSet(["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"], Type.RomanUpper);
     addAlternationTextSet(["i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix"], Type.RomanLower);
 
@@ -47,6 +53,6 @@ export module AlternationText {
         if (index < 1 || index > 9)
             throw new RangeError("index out of range");
 
-        return alternationTexts[type][index - 1];
+        return standardAlternationTexts[type][index - 1];
     }
 }

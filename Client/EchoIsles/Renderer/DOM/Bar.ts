@@ -4,42 +4,35 @@ import { Size } from "../Size";
 import { VoicePart } from "../../Core/Sheet/VoicePart";
 import { Style } from "../Style";
 import { VerticalDirection } from "../../Core/Style/VerticalDirection";
-import { Defaults } from "../../Core/Sheet/Tablature/Defaults";
 import { Rect } from "../Rect";
 import { select, repeat } from "../../Core/Utilities/LinqLite";
 import { Point } from "../Point";
-import { DocumentRow } from "./DocumentRow";
 import { BarColumn } from "./BarColumn";
 import { Document } from "./Document";
-import { DocumentRowChild } from "./DocumentRowChild";
 import { BarHorizontalLine } from "./BarHorizontalLine";
+import {getBarBodyHeight} from "./Utilities";
+import {BarBase} from "./BarBase";
 
-export class Bar extends DocumentRowChild {
+export class Bar extends BarBase {
 
     readonly columns = new Array<BarColumn>();
     private readonly columnSpacings = new Array<number>();
     private readonly voices = new Array<Voice>();
-    private readonly horizontalLines = new Array<Array<BarHorizontalLine>>();
-
-    ownerRow: DocumentRow;
-
+    
+    private _desiredWidth: number;
+    
     constructor(parent: Document, public readonly bar: CoreBar) {
         super(parent);
         this.initializeComponents();
     }
 
-    get bodyHeight(): number {
-        return Style.current.bar.lineHeight * (Defaults.strings - 1);
+    get desiredWidth(): number {
+        return this._desiredWidth;
     }
 
     private initializeComponents() {
         this.columns.push(...select(this.bar.columns, c => new BarColumn(this, c)));
         this.voices.push(...select([this.bar.bassVoice, this.bar.trebleVoice], v => new Voice(this, v)));
-
-        for (let i = 0; i < Defaults.strings; ++i) {
-            this.horizontalLines[i] = new Array<BarHorizontalLine>();
-            this.horizontalLines[i].push(new BarHorizontalLine(this));
-        }
 
         for (let column of this.columns) {
             for (let i = 0; i < this.horizontalLines.length; ++i) {
@@ -98,13 +91,12 @@ export class Bar extends DocumentRowChild {
 
         desiredWidth += barStyle.horizontalPadding;
 
+        this._desiredWidth = desiredWidth;
         return desiredWidth;
     }
 
     protected measureOverride(availableSize: Size): Size {
-
-        const desiredWidth = this.measureWidth();
-
+    
         // measure voices to decide ceiling and floor sizes
         let desiredCeilingSize = 0;
         let desiredFloorSize = 0;
@@ -124,9 +116,9 @@ export class Bar extends DocumentRowChild {
         this.setDesiredCeilingSize(desiredCeilingSize);
         this.setDesiredFloorSize(desiredFloorSize);
 
-        const desiredHeight = this.bodyHeight + this.desiredCeilingSize + this.desiredFloorSize;
+        const desiredHeight = getBarBodyHeight() + this.desiredCeilingSize + this.desiredFloorSize;
 
-        return new Size(desiredWidth, desiredHeight);
+        return new Size(this.desiredWidth, desiredHeight);
     }
 
     protected arrangeOverride(finalSize: Size): Size {
@@ -170,7 +162,7 @@ export class Bar extends DocumentRowChild {
                         Style.current.bar.horizontalLineThickness));
 
                     horizontalLinePositions[i] = hole.to;
-                    ++horizontalLineCarets[i];
+                    horizontalLineCarets[i] += 1;
                 }
             }
         }
@@ -188,7 +180,7 @@ export class Bar extends DocumentRowChild {
         for (let voice of this.voices) {
             const position = VerticalDirection.select(VoicePart.getEpitaxyDirection(voice.voice.voicePart),
                 () => this.position.translate(new Point(0, -voice.desiredEpitaxySize)),
-                () => this.position.translate(new Point(0, this.bodyHeight)));
+                () => this.position.translate(new Point(0, getBarBodyHeight())));
 
             voice.arrange(Rect.create(position, finalSize));
         }
@@ -197,8 +189,8 @@ export class Bar extends DocumentRowChild {
     }
 
     destroy(): void {
-        this.columns.forEach(c => c.destroy());
+        super.destroy();
+        this.destroyChildren(this.columns, this.voices);
         this.columnSpacings.length = this.columns.length - 1;
-        this.voices.forEach(v => v.destroy());
     }
 }
