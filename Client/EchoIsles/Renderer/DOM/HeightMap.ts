@@ -12,8 +12,12 @@ export class HeightMap {
         this.fill(filledHeight);
     }
 
+    get maxHeight() {
+        return max(this.heights);
+    }
+
     getIndex(position: number): number {
-        return position * this.sampleRateInversed;
+        return Math.floor(position * this.sampleRateInversed);
     }
 
     getIndices(position: number, size: number): Iterable<number> {
@@ -21,30 +25,38 @@ export class HeightMap {
     }
 
     getIndicesGuarded(position: number, size: number): Iterable<number> {
-        const from = Math.max(0, this.getIndex(position));
-        const to = Math.min(this.heights.length - 1, this.getIndex(position + size));
+        const from = Math.floor(Math.max(0, this.getIndex(position)));
+        const to = Math.ceil(Math.min(this.heights.length - 1, this.getIndex(position + size)));
         return ISequence.range(from, to - from + 1);
     }
 
-    getHeight(position: number, size?: number): number {
+    getHeight(from: number, size?: number): number {
+        from = Math.floor(from);
         if (size === undefined) {
-            return this.heights[this.getIndex(position)];
+            return this.heights[this.getIndex(from)];
         } else {
-            return (this.getIndices(position, size) as ISequence<number>).max(i => this.heights[i]);
+            size = Math.ceil(size);
+            return (this.getIndices(from, size) as ISequence<number>).max(i => this.heights[i]);
         }
     }
 
-    setHeight(position: number, size: number, height: number) {
+    setHeight(from: number, size: number, height: number) {
+        from = Math.floor(from);
+        size = Math.ceil(size);
+
         if (size <= 1) {
-            this.heights[this.getIndex(position)] = height;
+            this.heights[this.getIndex(from)] = height;
         } else {
-            for (let index of this.getIndices(position, size)) {
+            for (let index of this.getIndices(from, size)) {
                 this.heights[index] = height;
             }
         }
     }
 
     ensureHeight(from: number, size: number, height: number) {
+        from = Math.floor(from);
+        size = Math.ceil(size);
+        
         if (from < 0) {
             size += from;
             from = 0;
@@ -59,6 +71,9 @@ export class HeightMap {
     }
 
     ensureHeightSloped(from: number, size: number, fromHeight: number, toHeight: number, hMargin: number) {
+        from = Math.floor(from);
+        size = Math.ceil(size);
+
         const slope = (toHeight - fromHeight) / size;
 
         for (let index of this.getIndicesGuarded(from - hMargin, hMargin)) {

@@ -1,9 +1,9 @@
 ﻿import { LyricsSegment as CoreLyricsSegment } from "../../Core/Sheet/LyricsSegment";
-import { BarColumn } from "./BarColumn";
-import { BarColumnChild } from "./BarColumnChild";
+import { BarChild } from "./BarChild";
+import { Bar } from "./Bar";
 
-export class LyricsSegment extends BarColumnChild {
-    constructor(owner: BarColumn, readonly lyricsSegment: CoreLyricsSegment) {
+export class LyricsSegment extends BarChild {
+    constructor(owner: Bar, readonly lyricsSegment: CoreLyricsSegment) {
         super(owner);
     }
 }

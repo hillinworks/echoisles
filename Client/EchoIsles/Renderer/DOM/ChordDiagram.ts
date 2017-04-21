@@ -1,8 +1,9 @@
-﻿import { WidgetBase } from "../WidgetBase";
-import { IChordDefinition } from "../../Core/Sheet/Tablature/IChordDefinition";
+﻿import { IChordDefinition } from "../../Core/Sheet/Tablature/IChordDefinition";
+import { Bar } from "./Bar";
+import { BarChild } from "./BarChild";
 
-export class ChordDiagram extends WidgetBase {
-    constructor(owner: WidgetBase, readonly chord: IChordDefinition) {
+export class ChordDiagram extends BarChild {
+    constructor(owner: Bar, readonly chord: IChordDefinition) {
         super(owner);
     }
 }

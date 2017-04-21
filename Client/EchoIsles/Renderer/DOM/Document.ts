@@ -12,7 +12,7 @@ import { Point } from "../Point";
 import { Bar } from "./Bar";
 import { DocumentRowPosition } from "./DocumentRowPosition";
 import { assert } from "../../Core/Utilities/Debug";
-import {Style} from "../Style";
+import { Style } from "../Style";
 
 export class Document extends WidgetBase implements IWidgetRoot {
 
@@ -95,24 +95,17 @@ export class Document extends WidgetBase implements IWidgetRoot {
 
         for (let bar of this.bars) {
             bar.relativePosition = new Point(0, sumWidth);
-            sumWidth += bar.measureWidth();
-
-            let barAdded = false;
-            if (width >= sumWidth || currentRow.barCount === 0) {
-                currentRow.addBar(bar);
-                barAdded = true;
-            }
+            const barWidth = bar.preMeasure();
+            sumWidth += barWidth;
 
             if (width <= sumWidth || Style.current.row.preferredBarsPerRow <= currentRow.barCount) {
                 currentRow.seal(width);
                 currentRow = this.createRow();
                 currentRow.rowPosition = DocumentRowPosition.Body;
-                sumWidth = 0;
-
-                if (!barAdded) {
-                    currentRow.addBar(bar);
-                    sumWidth = bar.desiredWidth;
-                }
+                currentRow.addBar(bar);
+                sumWidth = barWidth;
+            } else {
+                currentRow.addBar(bar);
             }
         }
 

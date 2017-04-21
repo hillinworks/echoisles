@@ -175,7 +175,7 @@ export class Beat extends BeatWidgetBase {
 
     measureBody(): Rect {
 
-        const x = this.ownerColumn.relativePosition + this.ownerColumn.relativeNoteElementsBounds.width / 2;
+        const x = this.ownerColumn.relativePosition + this.ownerColumn.desiredSize.width / 2;
         let y = this.ownerVoice.selectEpitaxy(
             above => this.ownerColumn.relativeNoteElementsBounds.top,
             under => this.ownerColumn.relativeNoteElementsBounds.bottom);
@@ -307,14 +307,14 @@ export class Beat extends BeatWidgetBase {
             let x1: number, x2: number;
             if (isLastBeat) {
                 const previousColumn = this.ownerBar.columns[this.ownerColumn.barColumn.index - 1];
-                x1 = previousColumn.relativePosition + previousColumn.relativeNoteElementsBounds.width / 2;
+                x1 = previousColumn.relativePosition + previousColumn.desiredSize.width / 2;
                 x2 = this.barRelatedPosition.x;
                 const width = Math.min(Style.current.beam.maximumSemiBeamWidth, (x2 - x1) / 2);
                 x1 = x2 - width;
             } else {
                 const nextColumn = this.ownerBar.columns[this.ownerColumn.barColumn.index + 1];
                 x1 = this.barRelatedPosition.x;
-                x2 = nextColumn.relativePosition + nextColumn.relativeNoteElementsBounds.width / 2;
+                x2 = nextColumn.relativePosition + nextColumn.desiredSize.width / 2;
                 const width = Math.min(Style.current.beam.maximumSemiBeamWidth, (x2 - x1) / 2);
                 x2 = x1 + width;
             }

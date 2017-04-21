@@ -10,17 +10,22 @@ import { Point } from "../Point";
 import { BarColumn } from "./BarColumn";
 import { Document } from "./Document";
 import { BarHorizontalLine } from "./BarHorizontalLine";
-import {getBarBodyHeight} from "./Utilities";
-import {BarBase} from "./BarBase";
+import { getBarBodyHeight } from "./Utilities";
+import { BarBase } from "./BarBase";
+import { ChordDiagram } from "./ChordDiagram";
+import { LyricsSegment } from "./LyricsSegment";
+import { TablatureState } from "../../Core/Sheet/Tablature/TablatureState";
 
 export class Bar extends BarBase {
 
     readonly columns = new Array<BarColumn>();
     private readonly columnSpacings = new Array<number>();
     private readonly voices = new Array<Voice>();
-    
+    private readonly chordDiagrams = new Array<ChordDiagram | undefined>();
+    private readonly lyricsSegments = new Array<LyricsSegment | undefined>();
+
     private _desiredWidth: number;
-    
+
     constructor(parent: Document, public readonly bar: CoreBar) {
         super(parent);
         this.initializeComponents();
@@ -31,6 +36,26 @@ export class Bar extends BarBase {
     }
 
     private initializeComponents() {
+
+        for (let column of this.bar.columns) {
+            this.columns.push(new BarColumn(this, column));
+
+            // create chord diagram if existed
+            if (column.chord && column.isFirstOfSegment) {
+                const chord = (this.bar.documentState as TablatureState).resolveChord(column.chord);
+                this.chordDiagrams.push(new ChordDiagram(this, chord!));
+            } else {
+                this.chordDiagrams.push(undefined);
+            }
+
+            //create lyrics segment if existed
+            if (column.lyrics) {
+                this.lyricsSegments.push(new LyricsSegment(this, column.lyrics));
+            } else {
+                this.lyricsSegments.push(undefined);
+            }
+        }
+
         this.columns.push(...select(this.bar.columns, c => new BarColumn(this, c)));
         this.voices.push(...select([this.bar.bassVoice, this.bar.trebleVoice], v => new Voice(this, v)));
 
@@ -43,9 +68,10 @@ export class Bar extends BarBase {
         }
     }
 
-    measureWidth(): number {
+    preMeasure(): number {
         // measure all columns first
         for (let column of this.columns) {
+            column.invalidateLayout();  // force the measure to happen
             column.measure(Size.infinity);
         }
 
@@ -59,30 +85,36 @@ export class Bar extends BarBase {
             const maxBeatSpacing = barStyle.maxBeatSpacingRatio * barStyle.minBeatSpacing;
 
             const firstColumn = this.columns[0];
+            const firstLyricsSegment = this.lyricsSegments[0];
+            const firstChordDiagram = this.chordDiagrams[0];
             firstColumn.relativePosition = desiredWidth;
-            let x = desiredWidth + firstColumn.relativeNoteElementsBounds.width;
-            let lastLyricsStop = desiredWidth + (firstColumn.lyricsSegment ? firstColumn.lyricsSegment.desiredSize.width : 0);
-            let lastChordStop = desiredWidth + (firstColumn.chordDiagram ? firstColumn.chordDiagram.desiredSize.width : 0);
+            let x = desiredWidth + firstColumn.desiredSize.width;
+            let lastLyricsStop = desiredWidth + (firstLyricsSegment ? firstLyricsSegment.desiredSize.width : 0);
+            let lastChordStop = desiredWidth + (firstChordDiagram ? firstChordDiagram.desiredSize.width : 0);
 
             for (let i = 1; i < this.columns.length; ++i) {
                 const column = this.columns[i];
+                const lyricsSegment = this.lyricsSegments[i];
+                const chordDiagram = this.chordDiagrams[i];
 
                 const durationDelta = column.barColumn.position.fixedPointValue
                     - this.columns[i - 1].barColumn.position.fixedPointValue;
                 const spacing = Math.max(Math.min(spacingToDuration * durationDelta, maxBeatSpacing), barStyle.minBeatSpacing);
 
                 x = Math.max(x + spacing,
-                    column.lyricsSegment ? lastLyricsStop : 0,
-                    column.chordDiagram ? lastChordStop : 0);
+                    lyricsSegment ? lastLyricsStop : 0,
+                    chordDiagram ? lastChordStop : 0);
 
                 column.relativePosition = x;
 
-                if (column.lyricsSegment) {
-                    lastLyricsStop = x + column.lyricsSegment.desiredSize.width;
+                if (lyricsSegment) {
+                    lyricsSegment.measure(Size.infinity);
+                    lastLyricsStop = x + lyricsSegment.desiredSize.width;
                 }
 
-                if (column.chordDiagram) {
-                    lastChordStop = x + column.chordDiagram.desiredSize.width;
+                if (chordDiagram) {
+                    chordDiagram.measure(Size.infinity);
+                    lastChordStop = x + chordDiagram.desiredSize.width;
                 }
             }
 
@@ -96,29 +128,16 @@ export class Bar extends BarBase {
     }
 
     protected measureOverride(availableSize: Size): Size {
-    
-        // measure voices to decide ceiling and floor sizes
-        let desiredCeilingSize = 0;
-        let desiredFloorSize = 0;
+        // preMeasure should be called again because the first time it's been called, we are not placed 
+        // into a row yet
+        this.preMeasure();
 
         for (let voice of this.voices) {
             voice.measure(availableSize);
-            switch (VoicePart.getEpitaxyDirection(voice.voice.voicePart)) {
-                case VerticalDirection.Above:
-                    desiredCeilingSize = Math.max(desiredCeilingSize, voice.desiredEpitaxySize);
-                    break;
-                case VerticalDirection.Under:
-                    desiredFloorSize = Math.max(desiredFloorSize, voice.desiredEpitaxySize);
-                    break;
-            }
         }
 
-        this.setDesiredCeilingSize(desiredCeilingSize);
-        this.setDesiredFloorSize(desiredFloorSize);
-
-        const desiredHeight = getBarBodyHeight() + this.desiredCeilingSize + this.desiredFloorSize;
-
-        return new Size(this.desiredWidth, desiredHeight);
+        // desired height is omitted, height is decided by height maps in document rows
+        return new Size(this.desiredWidth, Number.NaN);
     }
 
     protected arrangeOverride(finalSize: Size): Size {
@@ -186,6 +205,24 @@ export class Bar extends BarBase {
         }
 
         return finalSize;
+    }
+
+    postArrange(): void {
+        for (let i = 0; i < this.columns.length; ++i) {
+            const column = this.columns[i];
+
+            const chordDiagram = this.chordDiagrams[i];
+            if (chordDiagram) {
+                const position = new Point(-Style.current.bar.ceilingSpacing - chordDiagram.desiredSize.height, 0);
+                chordDiagram.arrange(Rect.create(column.position.translate(position), chordDiagram.desiredSize));
+            }
+
+            const lyricsSegment = this.lyricsSegments[i];
+            if (lyricsSegment) {
+                const position = new Point(Style.current.bar.floorSpacing + lyricsSegment.desiredSize.height, 0);
+                lyricsSegment.arrange(Rect.create(column.position.translate(position), lyricsSegment.desiredSize));
+            }
+        }
     }
 
     destroy(): void {

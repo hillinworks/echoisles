@@ -4,7 +4,7 @@ import { Note } from "./Note";
 import { ChordStrumTechnique } from "./ChordStrumTechnique";
 import { LongNoteCapsule } from "./LongNoteCapsule";
 import { ChordDiagram } from "./ChordDiagram";
-import { L, firstOrUndefined, last, orderBy, any, select, all } from "../../Core/Utilities/LinqLite";
+import { L, firstOrUndefined, last, orderBy, any, select, all, allEquals } from "../../Core/Utilities/LinqLite";
 import { TablatureState } from "../../Core/Sheet/Tablature/TablatureState";
 import { IChordDefinition } from "../../Core/Sheet/Tablature/IChordDefinition";
 import { Chord } from "../../Core/Sheet/Tablature/Chord";
@@ -25,6 +25,7 @@ import { DocumentRow } from "./DocumentRow";
 import { BarChild } from "./BarChild";
 import { IBarDescendant } from "./IBarDescendant";
 import { Range } from "../Range";
+import { getBarBodyHeight } from "./Utilities";
 
 export class BarColumn extends BarChild {
 
@@ -63,14 +64,6 @@ export class BarColumn extends BarChild {
         return this._relativeNoteElementsBounds;
     }
 
-    get lyricsSegment(): LyricsSegment | undefined {
-        return this._lyricsSegment;
-    }
-
-    get chordDiagram(): ChordDiagram | undefined {
-        return this._chordDiagram;
-    }
-
     get chord(): IChordDefinition | undefined {
         if (!this.barColumn.chord) {
             return undefined;
@@ -91,8 +84,6 @@ export class BarColumn extends BarChild {
     private initializeComponents(): void {
         this.initializeChordStrumTechnique();
         this.initializeNotes();
-        this.initializeChordDiagram();
-        this.initializeLyricsSegment();
     }
 
     private initializeNotes(): void {
@@ -109,22 +100,26 @@ export class BarColumn extends BarChild {
 
 
         // create rests
-        if (all(this.barColumn.voiceBeats, b => b.isRest)) {    // all beats are rests we'll just create one
-            this.notes.push(new Rest(this, this.barColumn.voiceBeats[0], Defaults.strings / 2));
-        } else { // create individual rests
+        if (all(this.barColumn.voiceBeats, b => b.isRest) && allEquals(this.barColumn.voiceBeats, b => b.noteValue.base)) {
+            // all beats are rests we'll just create one
+            this.notes.push(new Rest(this, this.barColumn.voiceBeats[0], Defaults.strings / 2 - 2));
+        } else {
+            // create individual rests
             this.notes.push(
                 ...L(this.barColumn.voiceBeats).where(b => b.isRest)
                     .select(b => {
                         const string = VoicePart.getEpitaxyDirection(b.voicePart) === VerticalDirection.Above
-                            ? 0
-                            : Defaults.strings - 1;
+                            ? -1
+                            : Defaults.strings - 2;
                         return new Rest(this, b, string);
                     }));
         }
 
         this.notes.forEach(n => {
-            this.stringOccupation[n.string] = true;
-            this.stringObstruction[n.string] = true;
+            if (n.isObstructure) {
+                this.stringOccupation[n.string] = true;
+                this.stringObstruction[n.string] = true;
+            }
         });
 
         // create long note capsules
@@ -198,23 +193,6 @@ export class BarColumn extends BarChild {
         if (beat.isTied) {
             // todo: draw tie
         }
-    }
-
-    private initializeChordDiagram() {
-        const chord = this.chord;
-        if (!chord) {
-            return;
-        }
-
-        this._chordDiagram = new ChordDiagram(this, chord);
-    }
-
-    private initializeLyricsSegment() {
-        if (!this.barColumn.lyrics) {
-            return;
-        }
-
-        this._lyricsSegment = new LyricsSegment(this, this.barColumn.lyrics!);
     }
 
     isStringOccupied(string: number): boolean {
@@ -291,19 +269,25 @@ export class BarColumn extends BarChild {
 
         this._relativeNoteElementsBounds = bounds;
 
-        if (this.chordDiagram) {
-            this.chordDiagram.measure(availableSize);
-            const position = new Point(-Style.current.bar.ceilingSpacing - this.chordDiagram.desiredSize.height, 0);
-            bounds = bounds.union(Rect.create(position, this.chordDiagram.desiredSize));
-        }
-
-        if (this.lyricsSegment) {
-            this.lyricsSegment.measure(availableSize);
-            const position = new Point(Style.current.bar.floorSpacing + this.lyricsSegment.desiredSize.height, 0);
-            bounds = bounds.union(Rect.create(position, this.lyricsSegment.desiredSize));
+        // ownerRow could be undefined if this is the pre-measure stage
+        if (this.ownerRow) {
+            this.updateHeightMaps(bounds);
         }
 
         return bounds.size;
+    }
+
+    private updateHeightMaps(bounds: Rect) {
+        const x = this.ownerBar.getXRelativeToOwnerRow(this.relativePosition + bounds.left);
+
+        if (bounds.top < 0) {
+            this.ownerRow.getHeightMap(VoicePart.Treble).ensureHeight(x, bounds.width, -bounds.top);
+        }
+
+        const floorEpitaxy = bounds.bottom - getBarBodyHeight();
+        if (floorEpitaxy > 0) {
+            this.ownerRow.getHeightMap(VoicePart.Bass).ensureHeight(x, bounds.width, floorEpitaxy);
+        }
     }
 
     protected arrangeOverride(finalSize: Size): Size {
@@ -315,8 +299,10 @@ export class BarColumn extends BarChild {
 
         for (let note of this.notes) {
             note.arrange(Rect.create(this.position.translate(note.relativePosition), note.desiredSize));
-            this.stringHoles[note.string] = this.stringHoles[note.string].union(
-                Range.fromRadius(note.position.x, note.desiredSize.width / 2));
+            if (note.isObstructure) {
+                this.stringHoles[note.string] = this.stringHoles[note.string].union(
+                    Range.fromRadius(note.position.x, note.desiredSize.width / 2));
+            }
             bounds = bounds.union(Rect.create(note.position, note.renderSize));
         }
 
@@ -337,17 +323,7 @@ export class BarColumn extends BarChild {
                 this.chordStrumTechnique.renderSize));
         }
 
-        if (this.chordDiagram) {
-            const position = new Point(-Style.current.bar.ceilingSpacing - this.chordDiagram.desiredSize.height, 0);
-            this.chordDiagram.arrange(Rect.create(this.position.translate(position), this.chordDiagram.desiredSize));
-            bounds = bounds.union(Rect.create(this.chordDiagram.position, this.chordDiagram.renderSize));
-        }
-
-        if (this.lyricsSegment) {
-            const position = new Point(Style.current.bar.floorSpacing + this.lyricsSegment.desiredSize.height, 0);
-            this.lyricsSegment.arrange(Rect.create(this.position.translate(position), this.lyricsSegment.desiredSize));
-            bounds = bounds.union(Rect.create(this.lyricsSegment.position, this.lyricsSegment.renderSize));
-        }
+        this.updateHeightMaps(bounds);
 
         return bounds.size;
     }

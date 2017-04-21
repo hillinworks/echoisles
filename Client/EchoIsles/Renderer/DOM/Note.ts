@@ -3,8 +3,7 @@ import { BarColumn } from "./BarColumn";
 import { NoteBase } from "./NoteBase";
 import { IChordFingering } from "../../Core/Sheet/Tablature/IChordFingering";
 import { Beat as CoreBeat } from "../../Core/Sheet/Beat";
-import { Size } from "../Size";
-import { setPosition, makeStyle, font, centerAlign } from "./Utilities";
+import { makeStyle, font, centerAlign } from "./Utilities";
 import { Style } from "../Style";
 
 export class Note extends NoteBase {
@@ -28,6 +27,14 @@ export class Note extends NoteBase {
         return this.ownerBeat.isTied;
     }
 
+    get isObstructure(): boolean {
+        return true;
+    }
+
+    protected get symbolObject(): fabric.Object {
+        return this.frettingText;
+    }
+
     matchesChord(fingering: IChordFingering): boolean {
         return this.note.matchesChord(fingering);
     }
@@ -39,17 +46,6 @@ export class Note extends NoteBase {
         if (this.root) {
             this.root.canvas.add(this.frettingText);
         }
-    }
-
-    protected measureOverride(availableSize: Size): Size {
-        const margin = Style.current.note.head.margin;
-        return Size.fromSizeLike(this.frettingText.getBoundingRect()).inflate(new Size(margin, margin));
-    }
-
-    protected arrangeOverride(finalSize: Size): Size {
-        const margin = Style.current.note.head.margin;
-        setPosition(this.frettingText, this.position);
-        return Size.fromSizeLike(this.frettingText.getBoundingRect()).inflate(new Size(margin, margin));
     }
 
     destroy(): void {

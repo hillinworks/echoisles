@@ -50,7 +50,8 @@
             },
             tremoloOffset: 12,
             modifierMargin: 6,
-            size: 12
+            size: 12,
+            restSize: 38
         },
 
         beam: {

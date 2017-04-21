@@ -98,6 +98,36 @@ export function all<T>(source: Iterable<T>, predicate: IndexedPredicate<T>): boo
 }
 
 /**
+ * Determines whether a sequence of values that are obtained by invoking a transform function on each element of the input sequence equals to each other.
+ * @param source An Iterable<T> that contains the elements to apply the transform function to.
+ * @param selector A transform function to apply to each element.
+ * @param comparer An equality comparer to compare values.
+ * @return true if every value transformed from elements of the source sequence equals to each other, otherwise, false.
+ */
+export function allEquals<T, TResult>(source: Iterable<T>, selector: Selector<T, TResult> = defaultSelector, comparer: EqualityComparer<TResult> = defaultEqualityComparer): boolean {
+
+    const iterator = source[Symbol.iterator]();
+
+    const { done, value } = iterator.next();
+    if (done) {
+        throwEmptySequence();
+    }
+
+    const seed = selector(value);
+
+    while (true) {
+        const iterateResult = iterator.next();
+        if (iterateResult.done) {
+            return true;
+        }
+        
+        if (!comparer(seed, selector(iterateResult.value))) {
+            return false;
+        }
+    }
+}
+
+/**
  * Determines whether any element of a sequence satisfies a condition.
  * @param source An Iterable<T> whose elements to apply the predicate to.
  * @param predicate A function to test each element for a condition.
@@ -1239,6 +1269,16 @@ export interface ISequence<T> extends Iterable<T> {
      * @return true if every element of the source sequence passes the test in the specified predicate, or if the sequence is empty; otherwise, false.
      */
     all(predicate: IndexedPredicate<T>): boolean;
+
+
+    /**
+     * Determines whether a sequence of values that are obtained by invoking a transform function on each element of this sequence equals to each other.
+     * @param selector A transform function to apply to each element.
+     * @param comparer An equality comparer to compare values.
+     * @return true if every value transformed from elements of this sequence equals to each other, otherwise, false.
+     */
+    allEquals<TResult>(selector?: Selector<T, TResult>, comparer?: EqualityComparer<TResult>): boolean;
+
     /**
      * Determines whether any element of this  sequence satisfies a condition.
      * @param predicate A function to test each element for a condition.
@@ -1664,6 +1704,10 @@ class Sequence<T> implements ISequence<T> {
 
     all(predicate: IndexedPredicate<T>): boolean {
         return all(this.iterable, predicate);
+    }
+
+    allEquals<TResult>(selector: Selector<T, TResult> = defaultSelector, comparer: EqualityComparer<TResult> = defaultEqualityComparer): boolean {
+        return allEquals(this.iterable, selector, comparer);
     }
 
     any(predicate: IndexedPredicate<T> = defaultPredicate): boolean {

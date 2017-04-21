@@ -10,7 +10,7 @@ import { Point } from "../Point";
 import { DocumentRowChild } from "./DocumentRowChild";
 import { BarLine } from "./BarLines/BarLine";
 import { getBarBodyHeight } from "./Utilities";
-import { EmptyBar } from "./EmptyBar";
+//import { EmptyBar } from "./EmptyBar";
 import { DocumentRowPosition } from "./DocumentRowPosition";
 import { Style } from "../Style";
 const heightMapSampleRate = 1;
@@ -108,14 +108,9 @@ export class DocumentRow extends WidgetBase {
 
         this.initializeHeightMaps(availableSize.width);
 
-        this._desiredCeilingSize = 0;
-        this._desiredFloorSize = 0;
-
         // measure bar lines first
         for (let barLine of this.barLines) {
             barLine.measure(new Size(Number.NaN, availableSize.height));
-            this._desiredCeilingSize = Math.max(this._desiredCeilingSize, barLine.desiredCeilingSize);
-            this._desiredFloorSize = Math.max(this._desiredFloorSize, barLine.desiredFloorSize);
         }
 
         this.barLines[0].relativePosition = Point.zero;
@@ -129,8 +124,6 @@ export class DocumentRow extends WidgetBase {
             bar.relativePosition = new Point(desiredWidth, 0);
             bar.measure(new Size(availableSize.width - desiredWidth, availableSize.height));
             desiredWidth += bar.desiredSize.width;
-            this._desiredCeilingSize = Math.max(this._desiredCeilingSize, bar.desiredCeilingSize);
-            this._desiredFloorSize = Math.max(this._desiredFloorSize, bar.desiredFloorSize);
 
             if (i !== this.bars.length - 1) {
                 // place the next bar line in between of this and next bar
@@ -139,10 +132,13 @@ export class DocumentRow extends WidgetBase {
             }
         }
 
+        this._desiredCeilingSize = this.getHeightMap(VoicePart.Treble).maxHeight;
+        this._desiredFloorSize = this.getHeightMap(VoicePart.Bass).maxHeight;
+
         for (let child of this.getLayoutChildren()) {
             child.relativeBaseline = this._desiredCeilingSize;
         }
-
+        
         const desiredHeight = getBarBodyHeight()
             + this._desiredCeilingSize
             + this._desiredFloorSize;
@@ -201,6 +197,9 @@ export class DocumentRow extends WidgetBase {
                     nextBarLine.desiredSize);
             }
         }
+
+        this.heightMaps.forEach(m => m.seal());
+        this.bars.forEach(b => b.postArrange());
 
         return new Size(renderWidth, this.desiredSize.height);
     }

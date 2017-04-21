@@ -49,12 +49,12 @@ export abstract class BarLineBase extends DocumentRowChild {
     protected abstract measureElementsWidth(availableSize: Size): number;
 
     protected arrangeLine(line: fabric.Line, x: number, finalSize: Size) {
-        setPosition(line, this.position.translate({ x: x + line.strokeWidth / 2, y: 0 }));
+        setPosition(line, this.position.translate({ x: x + line.strokeWidth / 2, y: this.relativeBaseline }));
         setSize(line, { width: 0, height: finalSize.height });
     }
 
     protected arrangeRepeatSign(repeatSign: RepeatSign, x: number) {
-        repeatSign.arrange(Rect.create(this.position.translate({ x: x + repeatSign.desiredSize.width / 2, y: 0 }), repeatSign.desiredSize));
+        repeatSign.arrange(Rect.create(this.position.translate({ x: x + repeatSign.desiredSize.width / 2, y: this.relativeBaseline }), repeatSign.desiredSize));
     }
 
     destroy(): void {

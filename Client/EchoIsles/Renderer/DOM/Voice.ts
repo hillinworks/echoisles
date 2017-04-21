@@ -7,8 +7,6 @@ import { Size } from "../Size";
 import { Rect } from "../Rect";
 import { VoicePart } from "../../Core/Sheet/VoicePart";
 import { VerticalDirection } from "../../Core/Style/VerticalDirection";
-import { Style } from "../Style";
-import { Defaults } from "../../Core/Sheet/Tablature/Defaults";
 import { HeightMap } from "./HeightMap";
 import { BarChild } from "./BarChild";
 import {getBarBodyHeight} from "./Utilities";

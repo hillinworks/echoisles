@@ -12,5 +12,4 @@ export abstract class BarChild extends WidgetBase implements IBarDescendant {
     get ownerRow(): DocumentRow {
         return this.ownerBar.ownerRow;
     }
-
 }
