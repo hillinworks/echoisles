@@ -1,11 +1,12 @@
-﻿using EchoIsles.Server.Extensions;
-using EchoIsles.Server.Helpers;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using AspNetCoreSpa.Server;
+using AspNetCoreSpa.Server.Extensions;
+using Swashbuckle.AspNetCore.Swagger;
 
-namespace EchoIsles
+namespace AspNetCoreSpa
 {
     public class Startup
     {
@@ -14,7 +15,7 @@ namespace EchoIsles
         //2) Configure services
         //3) Configure
 
-        private readonly IHostingEnvironment _hostingEnv;
+        private IHostingEnvironment _hostingEnv;
         public Startup(IHostingEnvironment env)
         {
             _hostingEnv = env;
@@ -32,7 +33,7 @@ namespace EchoIsles
                 builder.AddUserSecrets<Startup>();
             }
 
-            Startup.Configuration = builder.Build();
+            Configuration = builder.Build();
         }
 
         public static IConfigurationRoot Configuration { get; set; }
@@ -65,12 +66,13 @@ namespace EchoIsles
 
             services.AddCustomizedMvc();
 
-            services.AddSignalR(options => options.Hubs.EnableDetailedErrors = true);
-
             // Node services are to execute any arbitrary nodejs code from .net
             services.AddNodeServices();
 
-            services.AddSwaggerGen();
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new Info { Title = "AspNetCoreSpa", Version = "v1" });
+            });
         }
         public void Configure(IApplicationBuilder app)
         {
@@ -112,12 +114,13 @@ namespace EchoIsles
 
             app.UseMvc(routes =>
             {
+                // http://stackoverflow.com/questions/25982095/using-googleoauth2authenticationoptions-got-a-redirect-uri-mismatch-error
+                routes.MapRoute(name: "signin-google", template: "signin-google", defaults: new { controller = "Account", action = "ExternalLoginCallback" });
+
                 routes.MapSpaFallbackRoute(
                     name: "spa-fallback",
                     defaults: new { controller = "Home", action = "Index" });
             });
-
-            app.UseSignalR();
         }
     }
 }

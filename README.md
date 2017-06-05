@@ -22,18 +22,18 @@
 * [Istanbul](https://github.com/gotwarlost/istanbul) for test coverage
   * with [Remap Istanbul](https://github.com/SitePen/remap-istanbul) for remapping Javascript to TypeScript coverage
 * [HMR](https://webpack.github.io/docs/hot-module-replacement.html) (Hot Module Replacement) with Webpack
-* Webpack DLL support for fast rebuilds (~ < 0.5 second)
+* Webpack DLL support for fast rebuilds (~ < 0.5 second), depends upon machine performance.
 * [Compodoc](https://compodoc.github.io/compodoc/) for Angular documentation
 * [Server](https://github.com/aspnet/dotnet-watch) and [client](https://webpack.github.io/docs/hot-module-replacement.html) watches
 * Login and Registration functionality using [Asp.Net Identity & JWT](https://docs.asp.net/en/latest/security/authentication/identity.html)
 * Token based authentication using [Openiddict](https://github.com/openiddict/openiddict-core)
      * Get public key acess using: http://localhost:5000/.well-known/jwks
 * Extensible User/Role identity implementation
-* Various social login support, Follow [this](https://github.com/asadsahi/EchoIsles/wiki/Social-Login-Setup) wiki page to see how it will work.
+* Various social login support, Follow [this](https://github.com/asadsahi/AspNetCoreSpa/wiki/Social-Login-Setup) wiki page to see how it will work.
 * Lazy loading with pre loading all modules for fast navigation.
 * [Angular dynamic forms](https://angular.io/docs/ts/latest/cookbook/dynamic-form.html) for reusability and to keep html code DRY.
 * [Serilog](https://serilog.net/) with [Seq](https://getseq.net/) support to manage structured logging.
-* [Swagger](http://swagger.io/) as Api explorer (Visit url **http://localhost:5000/swagger/ui** after running the application)
+* [Swagger](http://swagger.io/) as Api explorer (Visit url **http://localhost:5000/swagger** after running the application). More [details](https://github.com/domaindrivendev/Swashbuckle.AspNetCore)
  
 ## Pre-requisites
 
@@ -46,9 +46,9 @@
 ## Installation
 ```
 1. Clone the repo
-    git clone https://github.com/asadsahi/EchoIsles
+    git clone https://github.com/asadsahi/AspNetCoreSpa
 2. Change directory to our repo
-    cd EchoIsles
+    cd AspNetCoreSpa
 3. dotnet restore
 4. Install global dependencies
     npm install protractor rimraf http-server @angular/cli -g
@@ -160,5 +160,5 @@ npm run e2e:live
 # Azure MSDeploy command
 * Use your site url, username, password
 ```
-"C:\\Program Files\\IIS\\Microsoft Web Deploy V3\\msdeploy.exe" -verb:sync -enableRule:AppOffline -source:contentPath="%USERPROFILE%\EchoIsles\bin\release\netcoreapp1.1\publish" -dest:contentPath="aspnetcorespa",ComputerName="https://yoursitename.scm.azurewebsites.net/msdeploy.axd",UserName='yourusername',Password='yourpassword',AuthType='Basic'
+"C:\\Program Files\\IIS\\Microsoft Web Deploy V3\\msdeploy.exe" -verb:sync -enableRule:AppOffline -source:contentPath="%USERPROFILE%\AspNetCoreSpa\bin\release\netcoreapp1.1\publish" -dest:contentPath="aspnetcorespa",ComputerName="https://yoursitename.scm.azurewebsites.net/msdeploy.axd",UserName='yourusername',Password='yourpassword',AuthType='Basic'
 ```
