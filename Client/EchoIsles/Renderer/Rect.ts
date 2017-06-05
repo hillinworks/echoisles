@@ -1,5 +1,7 @@
 ﻿import { Point } from "./Point";
 import { Size } from "./Size";
+import { IRectLike } from "./IRectLike";
+import { ISizeLike } from "./ISizeLike";
 
 export class Rect {
     constructor(public left: number, public top: number, public width: number, public height: number) { }
@@ -36,19 +38,19 @@ export class Rect {
         return new Size(this.width, this.height);
     }
 
-    equals(other: Rect): boolean {
+    equals(other: IRectLike): boolean {
         return this.left === other.left && this.top === other.top && this.width === other.width && this.height === other.height;
     }
 
-    union(other: Rect): Rect {
+    union(other: IRectLike): Rect {
         const left = Math.min(this.left, other.left);
         const top = Math.min(this.top, other.top);
-        const right = Math.max(this.right, other.right);
-        const bottom = Math.max(this.bottom, other.bottom);
+        const right = Math.max(this.right, other.left + other.width);
+        const bottom = Math.max(this.bottom, other.top + other.height);
         return new Rect(left, top, right - left, bottom - top);
     }
 
-    inflate(size: Size): Rect {
+    inflate(size: ISizeLike): Rect {
         return new Rect(this.left - size.width,
             this.top - size.height,
             this.width + size.width * 2,
@@ -64,15 +66,15 @@ export module Rect {
 
     export const zero = new Rect(0, 0, 0, 0);
 
-    export function create(topLeft: Point, size = Size.zero): Rect {
+    export function create(topLeft: Point, size: ISizeLike = Size.zero): Rect {
         return new Rect(topLeft.x, topLeft.y, size.width, size.height);
     }
 
-    export function createFromCenter(center: Point, size = Size.zero): Rect {
+    export function createFromCenter(center: Point, size: ISizeLike = Size.zero): Rect {
         return new Rect(center.x - size.width / 2, center.y - size.height / 2, size.width, size.height);
     }
 
-    export function fromRectLike(rectLike: { left: number, top: number, width: number, height: number }) {
+    export function fromRectLike(rectLike: IRectLike) {
         return new Rect(rectLike.left, rectLike.top, rectLike.width, rectLike.height);
     }
 

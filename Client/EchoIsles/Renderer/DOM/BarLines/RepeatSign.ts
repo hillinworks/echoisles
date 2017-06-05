@@ -35,7 +35,7 @@ export class RepeatSign extends WidgetBase {
     }
 
     protected measureOverride(availableSize: Size): Size {
-        return new Size(this.dot1.radius * 2, this.dot1.radius * 2 + this.dotSpacing);
+        return new Size(this.dot1.radius! * 2, this.dot1.radius! * 2 + this.dotSpacing);
     }
 
     protected arrangeOverride(finalSize: Size): Size {

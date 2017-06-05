@@ -2,8 +2,8 @@
 import { BaseNoteValue } from "../../Core/MusicTheory/BaseNoteValue";
 import { Size } from "../Size";
 import { Style } from "../Style";
-import {Point} from "../Point";
-import {IBarRelated} from "./IBarRelated";
+import { Point } from "../Point";
+import { IBarRelated } from "./IBarRelated";
 
 export class Stem extends WidgetBase implements IBarRelated {
 

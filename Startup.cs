@@ -2,11 +2,12 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using AspNetCoreSpa.Server;
-using AspNetCoreSpa.Server.Extensions;
+using EchoIsles.Server;
+using EchoIsles.Server.Extensions;
 using Swashbuckle.AspNetCore.Swagger;
+using EchoIsles.Server.Helpers;
 
-namespace AspNetCoreSpa
+namespace EchoIsles
 {
     public class Startup
     {
@@ -71,7 +72,7 @@ namespace AspNetCoreSpa
 
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new Info { Title = "AspNetCoreSpa", Version = "v1" });
+                c.SwaggerDoc("v1", new Info { Title = "EchoIsles", Version = "v1" });
             });
         }
         public void Configure(IApplicationBuilder app)
